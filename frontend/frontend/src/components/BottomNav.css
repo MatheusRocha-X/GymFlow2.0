@@ -1,0 +1,112 @@
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: rgba(13, 13, 26, 0.8);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-top: 1px solid rgba(99, 102, 241, 0.1);
+  padding: 0.75rem 0;
+  z-index: 1000;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bottom-nav::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(99, 102, 241, 0.3),
+    transparent
+  );
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  color: var(--text-tertiary);
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.5rem 0.5rem;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 50px;
+  text-align: center;
+  position: relative;
+}
+
+.bottom-nav-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  opacity: 0;
+  border-radius: 12px;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
+}
+
+.bottom-nav-item:hover {
+  color: var(--text-secondary);
+  transform: translateY(-2px);
+}
+
+.bottom-nav-item.active {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.bottom-nav-item.active::before {
+  opacity: 0.1;
+}
+
+.bottom-nav-item.active svg {
+  filter: drop-shadow(0 0 8px var(--accent-glow));
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.bottom-nav-item svg {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile optimization */
+@media (max-width: 640px) {
+  .bottom-nav {
+    padding: 0.5rem 0;
+  }
+  
+  .bottom-nav-item {
+    font-size: 0.65rem;
+    min-width: 58px;
+    padding: 0.4rem 0.5rem;
+  }
+  
+  .bottom-nav-item svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (min-width: 641px) {
+  .bottom-nav {
+    max-width: 600px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 20px 20px 0 0;
+    border-left: 1px solid rgba(99, 102, 241, 0.1);
+    border-right: 1px solid rgba(99, 102, 241, 0.1);
+  }
+}
