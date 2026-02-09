@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
+      includeAssets: ['favicon.ico', 'gymflow-logo.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'GymFlow - Treinos e Hidratação',
         short_name: 'GymFlow',

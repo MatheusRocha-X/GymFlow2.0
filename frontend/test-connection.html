@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste de Conexão - GymFlow</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #0f172a;
+      color: #fff;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 20px 0;
+    }
+    button {
+      background: #6366f1;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 10px 10px 0;
+    }
+    button:hover {
+      background: #4f46e5;
+    }
+    .success {
+      color: #22c55e;
+      font-weight: bold;
+    }
+    .error {
+      color: #ef4444;
+      font-weight: bold;
+    }
+    .info {
+      color: #60a5fa;
+    }
+    pre {
+      background: #0f172a;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      background: #0f172a;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Teste de Conexão Backend</h1>
+  
+  <div class="card">
+    <h2>📍 Configuração Atual</h2>
+    <p><strong>API URL:</strong> <span id="apiUrl" class="info"></span></p>
+    <p><strong>Ambiente:</strong> <span id="env" class="info"></span></p>
+  </div>
+
+  <div class="card">
+    <h2>🧪 Testar Conexão</h2>
+    <button onclick="testConnection()">Testar /health</button>
+    <button onclick="testAuth()">Testar /auth/telegram</button>
+    <div id="result"></div>
+  </div>
+
+  <div class="card">
+    <h2>⚙️ Configurar URL Personalizada</h2>
+    <input type="text" id="customUrl" placeholder="https://seu-backend.railway.app/api" />
+    <button onclick="setCustomUrl()">Definir URL</button>
+    <button onclick="clearCustomUrl()">Limpar (usar padrão)</button>
+  </div>
+
+  <div class="card">
+    <h2>📝 Instruções</h2>
+    <ol>
+      <li><strong>Backend Local:</strong> Deve estar rodando em <code>http://localhost:3000</code></li>
+      <li><strong>Backend Produção:</strong> Configure a URL do Railway/Render acima</li>
+      <li><strong>Vercel:</strong> Adicione <code>VITE_API_URL</code> nas variáveis de ambiente</li>
+    </ol>
+  </div>
+
+  <script>
+    const defaultApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    let currentApiUrl = localStorage.getItem('customApiUrl') || defaultApiUrl;
+
+    // Atualizar UI
+    document.getElementById('apiUrl').textContent = currentApiUrl;
+    document.getElementById('env').textContent = import.meta.env.MODE || 'development';
+
+    function setCustomUrl() {
+      const url = document.getElementById('customUrl').value.trim();
+      if (!url) {
+        alert('Digite uma URL válida!');
+        return;
+      }
+      localStorage.setItem('customApiUrl', url);
+      currentApiUrl = url;
+      document.getElementById('apiUrl').textContent = currentApiUrl;
+      alert('URL configurada! Teste a conexão novamente.');
+    }
+
+    function clearCustomUrl() {
+      localStorage.removeItem('customApiUrl');
+      currentApiUrl = defaultApiUrl;
+      document.getElementById('apiUrl').textContent = currentApiUrl;
+      document.getElementById('customUrl').value = '';
+      alert('URL resetada para o padrão!');
+    }
+
+    async function testConnection() {
+      const result = document.getElementById('result');
+      result.innerHTML = '<p>⏳ Testando conexão...</p>';
+
+      try {
+        // Remove /api do final se existir
+        const baseUrl = currentApiUrl.replace(/\/api\/?$/, '');
+        const response = await fetch(`${baseUrl}/health`);
+        const data = await response.json();
+
+        if (response.ok) {
+          result.innerHTML = `
+            <p class="success">✅ Backend conectado com sucesso!</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+        } else {
+          result.innerHTML = `
+            <p class="error">❌ Backend respondeu com erro</p>
+            <pre>Status: ${response.status}\n${JSON.stringify(data, null, 2)}</pre>
+          `;
+        }
+      } catch (error) {
+        result.innerHTML = `
+          <p class="error">❌ Erro ao conectar com o backend</p>
+          <pre>${error.message}</pre>
+          <p><strong>Possíveis causas:</strong></p>
+          <ul>
+            <li>Backend não está rodando</li>
+            <li>URL incorreta: <code>${currentApiUrl}</code></li>
+            <li>CORS bloqueando a requisição</li>
+            <li>Firewall ou rede bloqueando</li>
+          </ul>
+        `;
+      }
+    }
+
+    async function testAuth() {
+      const result = document.getElementById('result');
+      result.innerHTML = '<p>⏳ Testando rota de auth...</p>';
+
+      try {
+        const response = await fetch(`${currentApiUrl}/auth/telegram`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            telegram_chat_id: '123456789',
+            telegram_username: 'test_user',
+            name: 'Teste'
+          })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          result.innerHTML = `
+            <p class="success">✅ Auth endpoint funcionando!</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+        } else {
+          result.innerHTML = `
+            <p class="error">⚠️ Auth endpoint respondeu com erro (normal se dados inválidos)</p>
+            <pre>Status: ${response.status}\n${JSON.stringify(data, null, 2)}</pre>
+          `;
+        }
+      } catch (error) {
+        result.innerHTML = `
+          <p class="error">❌ Erro ao testar auth</p>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
