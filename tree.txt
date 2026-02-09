@@ -1,0 +1,77 @@
+GymFlow 2.1/
+│
+├── README.md
+├── INSTALACAO.md
+├── COMO_USAR.md
+├── QUICKSTART.md
+├── TROUBLESHOOTING.md
+├── DEPLOY.md
+├── ESTRUTURA.md
+├── LICENSE
+│
+├── backend/
+│   ├── config/
+│   │   ├── supabase.js
+│   │   └── telegram.js
+│   ├── services/
+│   │   ├── userService.js
+│   │   ├── workoutService.js
+│   │   ├── hydrationService.js
+│   │   └── reminderService.js
+│   ├── routes/
+│   │   ├── auth.js
+│   │   ├── workouts.js
+│   │   ├── hydration.js
+│   │   └── reminders.js
+│   ├── jobs/
+│   │   ├── waterReminderJob.js
+│   │   └── workoutReminderJob.js
+│   ├── database/
+│   │   └── schema.sql
+│   ├── server.js
+│   ├── package.json
+│   ├── .env
+│   ├── .env.example
+│   └── .gitignore
+│
+└── frontend/
+    ├── public/
+    │   ├── icon-192.svg
+    │   └── icon-512.svg
+    ├── src/
+    │   ├── components/
+    │   │   ├── Button.jsx
+    │   │   ├── Button.css
+    │   │   ├── BottomNav.jsx
+    │   │   ├── BottomNav.css
+    │   │   ├── ProgressCircle.jsx
+    │   │   └── ProgressCircle.css
+    │   ├── pages/
+    │   │   ├── Login.jsx
+    │   │   ├── Login.css
+    │   │   ├── Home.jsx
+    │   │   ├── Home.css
+    │   │   ├── Workouts.jsx
+    │   │   ├── Workouts.css
+    │   │   ├── Hydration.jsx
+    │   │   ├── Hydration.css
+    │   │   ├── Reminders.jsx
+    │   │   ├── Reminders.css
+    │   │   ├── Settings.jsx
+    │   │   └── Settings.css
+    │   ├── services/
+    │   │   ├── api.js
+    │   │   └── storage.js
+    │   ├── contexts/
+    │   │   └── AuthContext.jsx
+    │   ├── styles/
+    │   │   ├── global.css
+    │   │   └── components.css
+    │   ├── App.jsx
+    │   └── main.jsx
+    ├── index.html
+    ├── vite.config.js
+    ├── package.json
+    ├── .env
+    ├── .env.example
+    └── .gitignore
