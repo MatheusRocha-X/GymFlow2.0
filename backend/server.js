@@ -36,8 +36,30 @@ app.use(helmet());
 app.use(compression());
 
 // CORS - permitir frontend
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
+  'http://localhost:4173'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Permitir requisições sem origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+    
+    // Permitir URLs específicas
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Permitir qualquer subdomínio do Vercel (para preview deployments)
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Bloquear outros
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 
