@@ -64,8 +64,11 @@ async function checkWaterReminders() {
     const waterReminders = reminders.filter(r => r.type === 'water');
 
     for (const reminder of waterReminders) {
+      // Usar timezone do usuário
+      const userTimezone = reminder.users?.timezone || 'America/Sao_Paulo';
       const now = new Date();
-      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+      const currentTime = `${String(userTime.getHours()).padStart(2, '0')}:${String(userTime.getMinutes()).padStart(2, '0')}`;
 
       const startTime = reminder.water_start_time?.substring(0, 5) || '08:00';
       const endTime = reminder.water_end_time?.substring(0, 5) || '22:00';
@@ -80,6 +83,7 @@ async function checkWaterReminders() {
       const lastSent = reminder.last_sent_at ? new Date(reminder.last_sent_at) : null;
 
       if (lastSent) {
+        // Usar horário real do servidor para calcular intervalo (não depende de timezone)
         const minutesSinceLastSent = (now - lastSent) / 1000 / 60;
         if (minutesSinceLastSent < interval) {
           continue;
@@ -168,8 +172,10 @@ ${reminder.description || ''}
         await reminderService.updateLastSent(reminder.id);
 
         // Adicionar ao cache
+        const userTimezone = reminder.users?.timezone || 'America/Sao_Paulo';
         const now = new Date();
-        const cacheKey = `${reminder.id}-${now.toISOString().substring(0, 16)}`;
+        const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+        const cacheKey = `${reminder.id}-${userTime.toISOString().substring(0, 16)}`;
         sentCache.set(cacheKey, true);
 
         console.log(`✅ Lembrete "${reminder.title}" enviado para ${reminder.users.name}`);

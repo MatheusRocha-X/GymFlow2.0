@@ -30,9 +30,10 @@ function wasReminderSentToday(reminderId) {
 /**
  * Verifica se o horário atual corresponde ao horário do lembrete (com margem de 1 minuto)
  */
-function isReminderTime(reminderTime) {
+function isReminderTime(reminderTime, userTimezone) {
   const now = new Date();
-  const currentTime = now.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
+  const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+  const currentTime = `${String(userTime.getHours()).padStart(2, '0')}:${String(userTime.getMinutes()).padStart(2, '0')}`;
   const reminderHourMin = reminderTime.substring(0, 5); // HH:MM
   
   return currentTime === reminderHourMin;
@@ -63,8 +64,11 @@ async function processWorkoutReminders() {
         continue;
       }
 
+      // Usar timezone do usuário
+      const userTimezone = reminder.users?.timezone || 'America/Sao_Paulo';
+      
       // Verificar se está no horário
-      if (!isReminderTime(reminder.time)) {
+      if (!isReminderTime(reminder.time, userTimezone)) {
         continue;
       }
 

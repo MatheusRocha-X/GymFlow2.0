@@ -12,8 +12,11 @@ import { sendTelegramMessage, formatWaterReminderMessage } from '../config/teleg
  * Verifica se está dentro do horário configurado pelo usuário
  */
 function isWithinReminderTime(user) {
+  // Usar timezone do usuário
+  const userTimezone = user.timezone || 'America/Sao_Paulo';
   const now = new Date();
-  const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS
+  const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+  const currentTime = userTime.toTimeString().split(' ')[0]; // HH:MM:SS
   
   return currentTime >= user.water_reminder_start_time && 
          currentTime <= user.water_reminder_end_time;

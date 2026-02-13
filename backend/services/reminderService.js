@@ -75,10 +75,27 @@ export const reminderService = {
       .from('reminders')
       .select(`
         *,
-        users(telegram_chat_id, name, daily_water_goal),
+        users(telegram_chat_id, name, daily_water_goal, timezone),
         workouts(name)
       `)
       .eq('is_active', true);
+
+    return { data, error };
+  },
+
+  /**
+   * Buscar lembretes ativos para hoje (usado pelo workoutReminderJob)
+   */
+  async getTodayActiveReminders() {
+    const { data, error } = await supabase
+      .from('reminders')
+      .select(`
+        *,
+        users(telegram_chat_id, name, timezone),
+        workouts(name)
+      `)
+      .eq('is_active', true)
+      .in('type', ['workout', 'custom']);
 
     return { data, error };
   },
