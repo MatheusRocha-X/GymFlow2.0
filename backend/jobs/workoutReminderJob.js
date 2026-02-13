@@ -6,6 +6,7 @@
 import cron from 'node-cron';
 import { reminderService } from '../services/reminderService.js';
 import { sendTelegramMessage, formatWorkoutReminderMessage } from '../config/telegram.js';
+import { getCurrentTimeString } from '../utils/timezone.js';
 
 /**
  * Mapa para controlar lembretes já enviados hoje
@@ -31,9 +32,7 @@ function wasReminderSentToday(reminderId) {
  * Verifica se o horário atual corresponde ao horário do lembrete (com margem de 1 minuto)
  */
 function isReminderTime(reminderTime, userTimezone) {
-  const now = new Date();
-  const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
-  const currentTime = `${String(userTime.getHours()).padStart(2, '0')}:${String(userTime.getMinutes()).padStart(2, '0')}`;
+  const currentTime = getCurrentTimeString(userTimezone);
   const reminderHourMin = reminderTime.substring(0, 5); // HH:MM
   
   return currentTime === reminderHourMin;

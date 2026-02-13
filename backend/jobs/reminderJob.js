@@ -7,6 +7,7 @@ import cron from 'node-cron';
 import { reminderService } from '../services/reminderService.js';
 import { hydrationService } from '../services/hydrationService.js';
 import { sendTelegramMessage } from '../config/telegram.js';
+import { getCurrentTimeString, getCurrentDayOfWeek } from '../utils/timezone.js';
 
 // Cache para evitar envios duplicados no mesmo minuto
 const sentCache = new Map();
@@ -15,12 +16,18 @@ const sentCache = new Map();
  * Verifica se um lembrete deve ser enviado agora
  */
 function shouldSendReminder(reminder) {
-  const now = new Date();
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const currentDay = now.getDay();const reminderTime = reminder.time.substring(0, 5); // HH:MM
+  // Usar timezone do usuário (padrão: America/Sao_Paulo se não estiver definido)
+  const userTimezone = reminder.users?.timezone || 'America/Sao_Paulo';
+  
+  // Obter hora atual no timezone do usuário
+  const currentTime = getCurrentTimeString(userTimezone);
+  const currentDay = getCurrentDayOfWeek(userTimezone);
+
+  const reminderTime = reminder.time.substring(0, 5); // HH:MM
 
   // Verificar cache para evitar duplicatas
-  const cacheKey = `${reminder.id}-${now.toISOString().substring(0, 16)}`; // minuto atual
+  const now = new Date();
+  const cacheKey = `${reminder.id}-${currentTime}-${now.getDate()}`; // incluir data
   if (sentCache.has(cacheKey)) {
     return false;
   }
@@ -66,12 +73,12 @@ async function checkWaterReminders() {
     for (const reminder of waterReminders) {
       // Usar timezone do usuário
       const userTimezone = reminder.users?.timezone || 'America/Sao_Paulo';
-      const now = new Date();
-      const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
-      const currentTime = `${String(userTime.getHours()).padStart(2, '0')}:${String(userTime.getMinutes()).padStart(2, '0')}`;
+      const currentTime = getCurrentTimeString(userTimezone);
 
       const startTime = reminder.water_start_time?.substring(0, 5) || '08:00';
       const endTime = reminder.water_end_time?.substring(0, 5) || '22:00';
+      
+      const now = new Date();
 
       // Verificar se está dentro do horário
       if (currentTime < startTime || currentTime > endTime) {
@@ -173,9 +180,9 @@ ${reminder.description || ''}
 
         // Adicionar ao cache
         const userTimezone = reminder.users?.timezone || 'America/Sao_Paulo';
+        const currentTime = getCurrentTimeString(userTimezone);
         const now = new Date();
-        const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
-        const cacheKey = `${reminder.id}-${userTime.toISOString().substring(0, 16)}`;
+        const cacheKey = `${reminder.id}-${currentTime}-${now.getDate()}`;
         sentCache.set(cacheKey, true);
 
         console.log(`✅ Lembrete "${reminder.title}" enviado para ${reminder.users.name}`);

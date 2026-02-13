@@ -7,6 +7,7 @@ import cron from 'node-cron';
 import { userService } from '../services/userService.js';
 import { hydrationService } from '../services/hydrationService.js';
 import { sendTelegramMessage, formatWaterReminderMessage } from '../config/telegram.js';
+import { getCurrentTimeString } from '../utils/timezone.js';
 
 /**
  * Verifica se está dentro do horário configurado pelo usuário
@@ -14,9 +15,7 @@ import { sendTelegramMessage, formatWaterReminderMessage } from '../config/teleg
 function isWithinReminderTime(user) {
   // Usar timezone do usuário
   const userTimezone = user.timezone || 'America/Sao_Paulo';
-  const now = new Date();
-  const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
-  const currentTime = userTime.toTimeString().split(' ')[0]; // HH:MM:SS
+  const currentTime = getCurrentTimeString(userTimezone) + ':00'; // Adicionar :00 para formato HH:MM:SS
   
   return currentTime >= user.water_reminder_start_time && 
          currentTime <= user.water_reminder_end_time;
