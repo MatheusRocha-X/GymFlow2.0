@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { TrendingUp, TrendingDown, Plus, Trash2, Scale, Activity, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Trash2, Scale, Activity, Calendar, Target, Award } from 'lucide-react';
 import api from '../services/api';
 import PageHeader from '../components/PageHeader';
 import './Evolution.css';
@@ -22,10 +22,35 @@ export default function Evolution() {
     notes: '',
     date: new Date().toISOString().split('T')[0]
   });
+  const [userHeight, setUserHeight] = useState(170); // Altura em cm para cálculo IMC
 
   useEffect(() => {
     loadMetrics();
+    // Carregar altura do localStorage
+    const savedHeight = localStorage.getItem('userHeight');
+    if (savedHeight) {
+      setUserHeight(parseInt(savedHeight));
+    }
   }, [user]);
+
+  const saveHeight = (height) => {
+    setUserHeight(height);
+    localStorage.setItem('userHeight', height.toString());
+  };
+
+  const calculateIMC = (weight) => {
+    if (!weight || !userHeight) return null;
+    const heightM = userHeight / 100;
+    return (weight / (heightM * heightM)).toFixed(1);
+  };
+
+  const getIMCCategory = (imc) => {
+    if (!imc) return { label: '-', color: 'gray' };
+    if (imc < 18.5) return { label: 'Abaixo do peso', color: '#3b82f6' };
+    if (imc < 25) return { label: 'Peso normal', color: '#10b981' };
+    if (imc < 30) return { label: 'Sobrepeso', color: '#f59e0b' };
+    return { label: 'Obesidade', color: '#ef4444' };
+  };
 
   const loadMetrics = async () => {
     try {
@@ -125,122 +150,213 @@ export default function Evolution() {
   }
 
   return (
-    <div className="evolution-page">
-      <div className="evolution-container">
+    <div className="page evolution-page">
+      <div className="container">
         <PageHeader 
           icon={TrendingUp}
-          title="Evolução"
-          subtitle="Acompanhe seu progresso físico"
+          title="Evolução Corporal"
+          subtitle="Acompanhe suas medições e progresso físico"
         />
 
         {/* Stats Cards */}
         {stats.current && (
-          <div className="stats-cards fade-in" style={{ animationDelay: '0.1s' }}>
-            <div className="stat-card weight-card">
-              <div className="stat-icon">
-                <Scale size={24} />
+          <div className="evo-stats-grid">
+            <div className="evo-stat-card premium-card">
+              <div className="evo-stat-icon weight">
+                <Scale size={28} />
               </div>
-              <div className="stat-content">
-                <span className="stat-label">Peso Atual</span>
-                <div className="stat-value-group">
-                  <span className="stat-value">{stats.current.weight} kg</span>
-                  {renderTrend(stats.weightDiff, 'kg')}
-                </div>
+              <div className="evo-stat-content">
+                <span className="evo-stat-label">Peso Atual</span>
+                <span className="evo-stat-value">{stats.current.weight} kg</span>
+                {renderTrend(stats.weightDiff, 'kg')}
+              </div>
+            </div>
+
+            <div className="evo-stat-card premium-card">
+              <div className="evo-stat-icon imc">
+                <Target size={28} />
+              </div>
+              <div className="evo-stat-content">
+                <span className="evo-stat-label">IMC</span>
+                <span className="evo-stat-value">{calculateIMC(stats.current.weight) || '-'}</span>
+                {calculateIMC(stats.current.weight) && (
+                  <span 
+                    className="imc-category"
+                    style={{ color: getIMCCategory(calculateIMC(stats.current.weight)).color }}
+                  >
+                    {getIMCCategory(calculateIMC(stats.current.weight)).label}
+                  </span>
+                )}
               </div>
             </div>
 
             {stats.current.body_fat_percentage && (
-              <div className="stat-card fat-card">
-                <div className="stat-icon">
-                  <Activity size={24} />
+              <div className="evo-stat-card premium-card">
+                <div className="evo-stat-icon fat">
+                  <Activity size={28} />
                 </div>
-                <div className="stat-content">
-                  <span className="stat-label">% Gordura</span>
-                  <div className="stat-value-group">
-                    <span className="stat-value">{stats.current.body_fat_percentage}%</span>
-                    {renderTrend(stats.fatDiff, '%')}
-                  </div>
+                <div className="evo-stat-content">
+                  <span className="evo-stat-label">% Gordura</span>
+                  <span className="evo-stat-value">{stats.current.body_fat_percentage}%</span>
+                  {renderTrend(stats.fatDiff, '%')}
                 </div>
               </div>
             )}
+
+            <div className="evo-stat-card premium-card">
+              <div className="evo-stat-icon total">
+                <Award size={28} />
+              </div>
+              <div className="evo-stat-content">
+                <span className="evo-stat-label">Total de Medições</span>
+                <span className="evo-stat-value">{metrics.length}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Gráfico de Evolução */}
+        {metrics.length > 0 && (
+          <div className="evolution-chart premium-card">
+            <h2 className="section-title">
+              <TrendingUp size={24} />
+              Evolução do Peso
+            </h2>
+            <div className="chart-container">
+              {metrics.slice().reverse().slice(0, 10).map((metric, index) => {
+                const maxWeight = Math.max(...metrics.map(m => m.weight));
+                const minWeight = Math.min(...metrics.map(m => m.weight));
+                const range = maxWeight - minWeight || 1;
+                const height = ((metric.weight - minWeight) / range) * 100;
+                
+                return (
+                  <div key={metric.id} className="chart-bar-wrapper">
+                    <div className="chart-bar-container">
+                      <div 
+                        className="chart-bar"
+                        style={{ 
+                          height: `${Math.max(height, 10)}%`,
+                          background: 'linear-gradient(180deg, var(--accent-primary), var(--accent-secondary))'
+                        }}
+                      >
+                        <span className="chart-value">{metric.weight}kg</span>
+                      </div>
+                    </div>
+                    <span className="chart-label">{new Date(metric.measured_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
         {/* Histórico */}
-        <section className="metrics-history fade-in" style={{ animationDelay: '0.2s' }}>
-          <h2 className="section-title">Histórico de Medições</h2>
+        <section className="metrics-section premium-card">
+          <div className="section-header">
+            <h2 className="section-title">
+              <Calendar size={24} />
+              Histórico de Medições
+            </h2>
+          </div>
           
           {metrics.length === 0 ? (
             <div className="empty-state">
-              <Scale size={48} className="empty-icon" />
-              <p className="empty-message">Nenhuma medição registrada</p>
-              <p className="empty-hint">Adicione sua primeira medição para começar a acompanhar sua evolução</p>
-              <button className="btn-primary" onClick={() => setShowModal(true)}>
-                <Plus size={20} />
-                Adicionar Medição
-              </button>
+              <div className="empty-icon-wrapper">
+                <Scale size={64} />
+              </div>
+              <h3>Nenhuma medição registrada</h3>
+              <p>Adicione sua primeira medição para começar a acompanhar sua evolução</p>
+              <p className="empty-hint">💡 Registre medições regulares para visualizar seu progresso!</p>
             </div>
           ) : (
             <div className="metrics-list">
-              {metrics.map((metric, index) => (
-                <div 
-                  key={metric.id} 
-                  className="metric-card"
-                  style={{ animationDelay: `${0.3 + index * 0.05}s` }}
-                >
-                  <div className="metric-date">
-                    <Calendar size={16} />
-                    <span>{formatDate(metric.measured_at)}</span>
-                  </div>
-                  
-                  <div className="metric-values">
-                    <div className="metric-value">
-                      <Scale size={18} />
-                      <span>{metric.weight} kg</span>
+              {metrics.map((metric) => {
+                const imc = calculateIMC(metric.weight);
+                const imcCat = getIMCCategory(imc);
+                
+                return (
+                  <div key={metric.id} className="metric-item">
+                    <div className="metric-date-badge">
+                      <Calendar size={14} />
+                      {formatDate(metric.measured_at)}
                     </div>
                     
-                    {metric.body_fat_percentage && (
-                      <div className="metric-value">
-                        <Activity size={18} />
-                        <span>{metric.body_fat_percentage}%</span>
+                    <div className="metric-data">
+                      <div className="metric-primary">
+                        <div className="metric-value-item">
+                          <Scale size={18} />
+                          <span className="value">{metric.weight} kg</span>
+                        </div>
+                        
+                        {imc && (
+                          <div className="metric-value-item">
+                            <Target size={18} />
+                            <span className="value">IMC: {imc}</span>
+                            <span className="imc-badge" style={{ background: imcCat.color }}>
+                              {imcCat.label}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {metric.body_fat_percentage && (
+                          <div className="metric-value-item">
+                            <Activity size={18} />
+                            <span className="value">{metric.body_fat_percentage}% gordura</span>
+                          </div>
+                        )}
                       </div>
-                    )}
+                      
+                      {metric.notes && (
+                        <p className="metric-notes">📝 {metric.notes}</p>
+                      )}
+                    </div>
+                    
+                    <button 
+                      className="btn-delete-metric"
+                      onClick={() => handleDelete(metric.id)}
+                      title="Deletar medição"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-                  
-                  {metric.notes && (
-                    <p className="metric-notes">{metric.notes}</p>
-                  )}
-                  
-                  <button 
-                    className="btn-delete"
-                    onClick={() => handleDelete(metric.id)}
-                    title="Deletar medição"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
+
+        {/* Botão flutuante de adicionar */}
+        <button 
+          className="fab-button"
+          onClick={() => setShowModal(true)}
+          title="Adicionar nova medição"
+        >
+          <Plus size={24} />
+        </button>
       </div>
 
       {/* Modal de Adicionar Medição */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Nova Medição</h2>
+          <div className="modal-content metric-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-enhanced">
+              <div className="modal-title">
+                <Scale size={28} />
+                <div>
+                  <h2>Nova Medição</h2>
+                  <p>Registre seu peso e composição corporal</p>
+                </div>
+              </div>
               <button 
-                className="btn-close"
+                className="modal-close"
                 onClick={() => setShowModal(false)}
               >
                 ×
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="metric-form">
-              <div className="form-group">
+            <form onSubmit={handleSubmit} className="metric-form-enhanced">
+              <div className="form-group-enhanced">
                 <label>
                   <Scale size={18} />
                   Peso (kg) *
@@ -254,10 +370,16 @@ export default function Evolution() {
                   onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                   placeholder="Ex: 75.5"
                   required
+                  autoFocus
                 />
+                {formData.weight && (
+                  <span className="input-hint">
+                    IMC: {calculateIMC(parseFloat(formData.weight)) || 'Configure sua altura'}
+                  </span>
+                )}
               </div>
 
-              <div className="form-group">
+              <div className="form-group-enhanced">
                 <label>
                   <Activity size={18} />
                   % Gordura Corporal
@@ -269,29 +391,47 @@ export default function Evolution() {
                   max="100"
                   value={formData.body_fat_percentage}
                   onChange={(e) => setFormData({ ...formData, body_fat_percentage: e.target.value })}
-                  placeholder="Ex: 15.2"
+                  placeholder="Ex: 15.2 (opcional)"
                 />
               </div>
 
-              <div className="form-group">
-                <label>
-                  <Calendar size={18} />
-                  Data da Medição
-                </label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  max={new Date().toISOString().split('T')[0]}
-                />
+              <div className="form-row">
+                <div className="form-group-enhanced">
+                  <label>
+                    <Calendar size={18} />
+                    Data da Medição
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+
+                <div className="form-group-enhanced">
+                  <label>
+                    <Target size={18} />
+                    Sua Altura (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="50"
+                    max="250"
+                    value={userHeight}
+                    onChange={(e) => saveHeight(parseInt(e.target.value) || 170)}
+                    placeholder="Ex: 175"
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
+              <div className="form-group-enhanced">
                 <label>Observações</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Ex: Após almoço, manhã em jejum..."
+                  placeholder="Ex: Após almoço, manhã em jejum, pós-treino..."
                   rows="3"
                 />
               </div>
@@ -299,13 +439,13 @@ export default function Evolution() {
               <div className="modal-actions">
                 <button 
                   type="button" 
-                  className="btn-secondary"
+                  className="btn-secondary-large"
                   onClick={() => setShowModal(false)}
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="btn-primary">
-                  <Plus size={18} />
+                <button type="submit" className="btn-primary-large">
+                  <Plus size={20} />
                   Salvar Medição
                 </button>
               </div>

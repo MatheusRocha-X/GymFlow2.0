@@ -99,6 +99,43 @@
   gap: var(--spacing-md);
 }
 
+.support-section {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.1));
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.support-section h3 {
+  color: #ef4444;
+}
+
+.pix-container {
+  margin-top: var(--spacing-lg);
+}
+
+.pix-code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--bg-tertiary);
+  overflow-x: auto;
+}
+
+.pix-code code {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  word-break: break-all;
+  font-family: 'Courier New', monospace;
+}
+
+.community-section {
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.05), rgba(88, 101, 242, 0.1));
+  border: 1px solid rgba(88, 101, 242, 0.2);
+}
+
+.community-section h3 {
+  color: #5865f2;
+}
+
 .developer-credit {
   text-align: center;
   padding: var(--spacing-xl) 0;
@@ -115,8 +152,78 @@
   color: var(--text-secondary);
 }
 
+/* Section Toggle Styles */
+.section-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  gap: 1rem;
+}
+
+.section-toggle:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.section-toggle-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  text-align: left;
+}
+
+.section-toggle-content svg {
+  flex-shrink: 0;
+  color: var(--accent-primary);
+  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.4));
+}
+
+.section-toggle-content h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.section-toggle > svg {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform 0.3s ease;
+}
+
+.section-content {
+  padding: 0 1.5rem 1.5rem;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 640px) {
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .section-toggle {
+    padding: 1rem;
+  }
+
+  .section-content {
+    padding: 0 1rem 1rem;
   }
 }

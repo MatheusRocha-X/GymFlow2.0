@@ -1,271 +1,203 @@
-import React, { useState } from 'react';
-import { Search, Filter, Dumbbell, X } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Dumbbell,
+  Filter,
+  Search
+} from 'lucide-react';
 import PageHeader from '../components/PageHeader';
-import { exercisesDatabase, categories, difficulties, equipments } from '../data/exercises';
+import { categories, equipments, exercisesDatabase } from '../data/exercises';
 import './Exercises.css';
 
+const ITEMS_PER_PAGE = 18;
+
 export default function Exercises() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('Todos');
   const [selectedEquipment, setSelectedEquipment] = useState('Todos');
-  const [selectedExercise, setSelectedExercise] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
 
-  // Filtrar exercícios
-  const filteredExercises = exercisesDatabase.filter(exercise => {
-    const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         exercise.muscles.some(m => m.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === 'Todos' || exercise.category === selectedCategory;
-    const matchesDifficulty = selectedDifficulty === 'Todos' || exercise.difficulty === selectedDifficulty;
-    const matchesEquipment = selectedEquipment === 'Todos' || exercise.equipment === selectedEquipment;
-    
-    return matchesSearch && matchesCategory && matchesDifficulty && matchesEquipment;
-  });
+  const filteredExercises = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
 
-  const getDifficultyColor = (difficulty) => {
-    switch(difficulty) {
-      case 'Iniciante': return '#10b981';
-      case 'Intermediário': return '#f59e0b';
-      case 'Avançado': return '#ef4444';
-      default: return '#6366f1';
+    return exercisesDatabase.filter((exercise) => {
+      const byText =
+        !normalized ||
+        exercise.name.toLowerCase().includes(normalized) ||
+        exercise.category.toLowerCase().includes(normalized) ||
+        exercise.equipment.toLowerCase().includes(normalized) ||
+        exercise.muscles?.some((muscle) => muscle.toLowerCase().includes(normalized));
+      const byCategory =
+        selectedCategory === 'Todos' || exercise.category === selectedCategory;
+      const byEquipment =
+        selectedEquipment === 'Todos' || exercise.equipment === selectedEquipment;
+
+      return byText && byCategory && byEquipment;
+    });
+  }, [query, selectedCategory, selectedEquipment]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredExercises.length / ITEMS_PER_PAGE));
+  const firstItem = (page - 1) * ITEMS_PER_PAGE;
+  const currentItems = filteredExercises.slice(firstItem, firstItem + ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, selectedCategory, selectedEquipment]);
+
+  useEffect(() => {
+    const scroller = document.querySelector('.nebula-content');
+    if (scroller) {
+      scroller.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
     }
-  };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [page]);
 
-  const getCategoryIcon = (category) => {
-    const icons = {
-      'Peito': '💪',
-      'Costas': '🔙',
-      'Pernas': '🦵',
-      'Ombros': '💪',
-      'Braços': '💪',
-      'Abdômen': '🎯'
-    };
-    return icons[category] || '🏋️';
+  const clearFilters = () => {
+    setQuery('');
+    setSelectedCategory('Todos');
+    setSelectedEquipment('Todos');
   };
 
   return (
-    <div className="exercises-page">
-      <PageHeader 
-        icon={Dumbbell}
-        title="Biblioteca de Exercícios"
-        subtitle={`${filteredExercises.length} exercícios disponíveis`}
-      />
+    <div className="page exercises-page">
+      <div className="container">
+        <PageHeader
+          icon={Dumbbell}
+          title="Biblioteca de Exercicios"
+          subtitle={`${filteredExercises.length} exercicios encontrados`}
+        />
 
-      {/* Search Bar */}
-      <div className="search-section">
-        <div className="search-bar">
-          <Search size={20} />
-          <input
-            type="text"
-            placeholder="Buscar por exercício ou músculo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button className="clear-search" onClick={() => setSearchTerm('')}>
-              <X size={18} />
-            </button>
-          )}
-        </div>
-        <button 
-          className={`filter-toggle ${showFilters ? 'active' : ''}`}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter size={20} />
-        </button>
-      </div>
-
-      {/* Filters */}
-      {showFilters && (
-        <div className="filters-panel fade-in">
-          <div className="filter-group">
-            <label>Categoria</label>
-            <div className="filter-buttons">
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  className={`filter-btn ${selectedCategory === cat ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(cat)}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+        <section className="exercise-toolbar card">
+          <div className="search-input-wrap">
+            <Search size={18} />
+            <input
+              type="text"
+              value={query}
+              placeholder="Buscar por nome, musculo, categoria..."
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            {query && (
+              <button
+                type="button"
+                className="ghost-icon-btn"
+                onClick={() => setQuery('')}
+                aria-label="Limpar busca"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
 
-          <div className="filter-group">
-            <label>Dificuldade</label>
-            <div className="filter-buttons">
-              {difficulties.map(diff => (
-                <button
-                  key={diff}
-                  className={`filter-btn ${selectedDifficulty === diff ? 'active' : ''}`}
-                  onClick={() => setSelectedDifficulty(diff)}
-                >
-                  {diff}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="filter-group">
-            <label>Equipamento</label>
-            <div className="filter-buttons">
-              {equipments.map(eq => (
-                <button
-                  key={eq}
-                  className={`filter-btn ${selectedEquipment === eq ? 'active' : ''}`}
-                  onClick={() => setSelectedEquipment(eq)}
-                >
-                  {eq}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button 
-            className="clear-filters"
-            onClick={() => {
-              setSelectedCategory('Todos');
-              setSelectedDifficulty('Todos');
-              setSelectedEquipment('Todos');
-              setSearchTerm('');
-            }}
+          <button
+            type="button"
+            className={`toggle-filter-btn ${showFilters ? 'active' : ''}`}
+            onClick={() => setShowFilters((value) => !value)}
           >
-            Limpar Filtros
+            <Filter size={16} />
+            Filtros
           </button>
-        </div>
-      )}
+        </section>
 
-      {/* Exercise Grid */}
-      <div className="exercises-grid">
-        {filteredExercises.length > 0 ? (
-          filteredExercises.map((exercise, index) => (
-            <div 
-              key={exercise.id}
-              className="exercise-card premium-card"
-              style={{ animationDelay: `${index * 0.05}s` }}
-              onClick={() => setSelectedExercise(exercise)}
-            >
-              <div className="exercise-gif">
-                <img src={exercise.gifUrl} alt={exercise.name} />
-                <div className="exercise-category-badge">
-                  <span>{getCategoryIcon(exercise.category)}</span>
-                  {exercise.category}
-                </div>
-              </div>
-              
-              <div className="exercise-info">
-                <h3>{exercise.name}</h3>
-                
-                <div className="exercise-meta">
-                  <span 
-                    className="difficulty-badge"
-                    style={{ backgroundColor: getDifficultyColor(exercise.difficulty) }}
-                  >
-                    {exercise.difficulty}
-                  </span>
-                  <span className="equipment-badge">
-                    {exercise.equipment}
-                  </span>
-                </div>
-
-                <div className="muscles-tags">
-                  {exercise.muscles.slice(0, 2).map((muscle, i) => (
-                    <span key={i} className="muscle-tag">{muscle}</span>
-                  ))}
-                  {exercise.muscles.length > 2 && (
-                    <span className="muscle-tag more">+{exercise.muscles.length - 2}</span>
-                  )}
-                </div>
-              </div>
+        {showFilters && (
+          <section className="filters-panel card fade-in">
+            <div className="filter-row">
+              <label htmlFor="category-filter">Categoria</label>
+              <select
+                id="category-filter"
+                value={selectedCategory}
+                onChange={(event) => setSelectedCategory(event.target.value)}
+              >
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
             </div>
-          ))
+
+            <div className="filter-row">
+              <label htmlFor="equipment-filter">Equipamento</label>
+              <select
+                id="equipment-filter"
+                value={selectedEquipment}
+                onChange={(event) => setSelectedEquipment(event.target.value)}
+              >
+                {equipments.map((equipment) => (
+                  <option key={equipment} value={equipment}>
+                    {equipment}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="active-chips">
+              <span className="chip">{selectedCategory}</span>
+              <span className="chip">{selectedEquipment}</span>
+            </div>
+
+            <button type="button" className="clear-filters-btn" onClick={clearFilters}>
+              Limpar filtros
+            </button>
+          </section>
+        )}
+
+        {currentItems.length > 0 ? (
+          <section className="exercise-grid">
+            {currentItems.map((exercise) => (
+              <article key={exercise.id} className="exercise-card-v2">
+                <div className="exercise-thumb">
+                  <img src={exercise.gifUrl} alt={exercise.name} loading="lazy" />
+                </div>
+                <div className="exercise-content">
+                  <h3>{exercise.name}</h3>
+                  <div className="card-tags">
+                    <span className="pill category">{exercise.category}</span>
+                    <span className="pill equipment">{exercise.equipment}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </section>
         ) : (
-          <div className="empty-state">
-            <Dumbbell size={48} />
-            <h3>Nenhum exercício encontrado</h3>
-            <p>Tente ajustar os filtros ou termo de busca</p>
-          </div>
+          <section className="exercise-empty card">
+            <Dumbbell size={44} />
+            <h3>Nenhum exercicio encontrado</h3>
+            <p>Tente outro termo de busca ou altere os filtros.</p>
+          </section>
+        )}
+
+        {filteredExercises.length > ITEMS_PER_PAGE && (
+          <nav className="pagination-v2 card" aria-label="Paginacao de exercicios">
+            <button
+              type="button"
+              className="page-btn"
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft size={16} />
+              Anterior
+            </button>
+
+            <strong>
+              Pagina {page} de {totalPages}
+            </strong>
+
+            <button
+              type="button"
+              className="page-btn"
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+              disabled={page === totalPages}
+            >
+              Proxima
+              <ChevronRight size={16} />
+            </button>
+          </nav>
         )}
       </div>
 
-      {/* Exercise Detail Modal */}
-      {selectedExercise && (
-        <div className="modal-overlay" onClick={() => setSelectedExercise(null)}>
-          <div className="modal-content exercise-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedExercise(null)}>
-              <X size={24} />
-            </button>
-
-            <div className="exercise-detail">
-              <div className="exercise-detail-header">
-                <div className="exercise-gif-large">
-                  <img src={selectedExercise.gifUrl} alt={selectedExercise.name} />
-                </div>
-                
-                <div className="exercise-title-section">
-                  <h2>{selectedExercise.name}</h2>
-                  <div className="exercise-badges">
-                    <span className="category-badge">
-                      {getCategoryIcon(selectedExercise.category)} {selectedExercise.category}
-                    </span>
-                    <span 
-                      className="difficulty-badge"
-                      style={{ backgroundColor: getDifficultyColor(selectedExercise.difficulty) }}
-                    >
-                      {selectedExercise.difficulty}
-                    </span>
-                    <span className="equipment-badge">
-                      {selectedExercise.equipment}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="exercise-detail-body">
-                <div className="detail-section">
-                  <h3>💪 Músculos Trabalhados</h3>
-                  <div className="muscles-list">
-                    {selectedExercise.muscles.map((muscle, i) => (
-                      <span key={i} className="muscle-chip">{muscle}</span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="detail-section">
-                  <h3>📋 Como Executar</h3>
-                  <ol className="instructions-list">
-                    {selectedExercise.instructions.map((instruction, i) => (
-                      <li key={i}>{instruction}</li>
-                    ))}
-                  </ol>
-                </div>
-
-                <div className="detail-section tips-section">
-                  <h3>💡 Dica Importante</h3>
-                  <p className="tips-text">{selectedExercise.tips}</p>
-                </div>
-              </div>
-
-              <div className="exercise-actions">
-                <button 
-                  className="btn-primary"
-                  onClick={() => {
-                    // Função para adicionar ao treino será implementada
-                    alert('Funcionalidade de adicionar ao treino em breve!');
-                    setSelectedExercise(null);
-                  }}
-                >
-                  <Dumbbell size={20} />
-                  Adicionar ao Treino
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

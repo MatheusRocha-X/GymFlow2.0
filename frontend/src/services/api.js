@@ -24,14 +24,67 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro na requisição');
+        const error = new Error(data.error || 'Erro na requisição');
+        error.response = { data, status: response.status };
+        throw error;
       }
 
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+      }
       throw error;
     }
+  }
+
+  /**
+   * Métodos HTTP genéricos
+   */
+  async get(endpoint, options = {}) {
+    const { params, ...restOptions } = options;
+    let url = endpoint;
+    
+    // Adicionar query params se existirem
+    if (params) {
+      const queryString = new URLSearchParams(
+        Object.entries(params).filter(([_, v]) => v != null)
+      ).toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+    }
+    
+    return this.request(url, {
+      method: 'GET',
+      ...restOptions
+    });
+  }
+
+  async post(endpoint, data = null, options = {}) {
+    return this.request(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+      ...options
+    });
+  }
+
+  async put(endpoint, data = null, options = {}) {
+    return this.request(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+      ...options
+    });
+  }
+
+  async delete(endpoint, options = {}) {
+    const { data, ...restOptions } = options;
+    return this.request(endpoint, {
+      method: 'DELETE',
+      body: data ? JSON.stringify(data) : undefined,
+      ...restOptions
+    });
   }
 
   // ==================== AUTH ====================
@@ -130,10 +183,20 @@ class ApiService {
     });
   }
 
-  async completeWorkout(workoutId, userId, notes = null) {
+  async completeWorkout(workoutId, userId, performanceData = {}) {
+    const payload = {
+      user_id: userId,
+      notes: performanceData.notes || null,
+      duration: performanceData.duration,
+      totalRestTime: performanceData.totalRestTime,
+      exercises: performanceData.exercises,
+      sets: performanceData.sets,
+      workoutLog: performanceData.workoutLog
+    };
+
     return this.request(`/workouts/${workoutId}/complete`, {
       method: 'POST',
-      body: JSON.stringify({ user_id: userId, notes })
+      body: JSON.stringify(payload)
     });
   }
 
@@ -172,6 +235,19 @@ class ApiService {
     return this.request(`/reminders/${reminderId}/toggle`, {
       method: 'PATCH',
       body: JSON.stringify({ is_active: isActive })
+    });
+  }
+
+  async quickSetupWaterReminder(userId) {
+    return this.request('/reminders/water/quick-setup', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId })
+    });
+  }
+
+  async testReminder(reminderId) {
+    return this.request(`/reminders/${reminderId}/test`, {
+      method: 'POST'
     });
   }
 

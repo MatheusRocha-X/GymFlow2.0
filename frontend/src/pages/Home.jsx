@@ -118,7 +118,7 @@ export default function Home() {
         <div className="stats-grid">
           <div className="stat-card water-stat fade-in" style={{ animationDelay: '0.1s' }}>
             <div className="stat-header">
-              <Droplet size={20} />
+              <Droplet size={24} />
               <span className="stat-label">Hidratação</span>
             </div>
             <div className="stat-value">{stats.waterProgress}%</div>
@@ -132,7 +132,7 @@ export default function Home() {
 
           <div className="stat-card workout-stat fade-in" style={{ animationDelay: '0.2s' }}>
             <div className="stat-header">
-              <Dumbbell size={20} />
+              <Dumbbell size={24} />
               <span className="stat-label">Treinos/Semana</span>
             </div>
             <div className="stat-value">{stats.workoutsThisWeek}</div>
@@ -141,7 +141,7 @@ export default function Home() {
 
           <div className="stat-card streak-stat fade-in" style={{ animationDelay: '0.3s' }}>
             <div className="stat-header">
-              <Flame size={20} />
+              <Flame size={24} />
               <span className="stat-label">Sequência</span>
             </div>
             <div className="stat-value">{stats.currentStreak}</div>

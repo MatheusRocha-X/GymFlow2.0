@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Dumbbell, BookOpen, Bell, TrendingUp, Settings } from 'lucide-react';
+import { Home, Dumbbell, BookOpen, Bell, TrendingUp, Settings, Pill } from 'lucide-react';
 import './BottomNav.css';
 
 export default function BottomNav() {
@@ -8,6 +8,7 @@ export default function BottomNav() {
     { to: '/', icon: Home, label: 'Início' },
     { to: '/workouts', icon: Dumbbell, label: 'Treinos' },
     { to: '/exercises', icon: BookOpen, label: 'Exercícios' },
+    { to: '/supplements', icon: Pill, label: 'Suplementos' },
     { to: '/reminders', icon: Bell, label: 'Lembretes' },
     { to: '/evolution', icon: TrendingUp, label: 'Evolução' },
     { to: '/settings', icon: Settings, label: 'Config' }

@@ -46,12 +46,14 @@
 }
 
 .btn-danger {
-  background-color: var(--error);
-  color: white;
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: #dc2626;
+  background: linear-gradient(135deg, #b91c1c, #991b1b) !important;
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4) !important;
 }
 
 .btn-ghost {

@@ -3,11 +3,10 @@
    ============================================================================ */
 
 .home-page {
-  min-height: 100vh;
+  height: calc(100vh - 72px);
   background: linear-gradient(135deg, #0a0a0f 0%, #0d0d15 50%, #0a0a12 100%);
-  padding-bottom: 90px !important;
   position: relative;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* Efeito de brilho de fundo */
@@ -34,7 +33,7 @@
   z-index: 1;
   max-width: 600px;
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 1rem 0.75rem;
 }
 
 /* ============================================================================
@@ -45,8 +44,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
-  padding: 1.25rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
   background: rgba(26, 26, 36, 0.6);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
@@ -83,19 +82,21 @@
 }
 
 .header-icon {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(234, 88, 12, 0.15) 100%);
-  border-radius: 15px;
+  border-radius: 12px;
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .flame-icon {
   color: #f59e0b;
   animation: flicker 2s ease-in-out infinite;
+  width: 24px;
+  height: 24px;
 }
 
 @keyframes flicker {
@@ -112,8 +113,8 @@
   backdrop-filter: blur(20px);
   border: 1px solid rgba(99, 102, 241, 0.2);
   border-radius: 20px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
   display: flex;
   gap: 1rem;
   box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
@@ -174,9 +175,9 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
   align-items: stretch;
 }
 
@@ -186,15 +187,17 @@
   -webkit-backdrop-filter: blur(30px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
-  padding: 1.25rem;
+  padding: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 140px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  aspect-ratio: 1;
 }
 
 .stat-card::before {
@@ -221,8 +224,16 @@
 
 .stat-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.water-stat .stat-header {
+  flex-direction: row;
+  align-items: center;
   margin-bottom: 0.75rem;
 }
 
@@ -239,8 +250,6 @@
   font-weight: 700;
   color: #ffffff;
   line-height: 1.2;
-  margin-bottom: 0.5rem;
-  margin-top: auto;
 }
 
 .stat-footer {
@@ -251,6 +260,7 @@
 
 /* Cores específicas dos stats */
 .water-stat .stat-header svg { color: #3b82f6; }
+.water-stat { grid-column: 1 / -1; aspect-ratio: unset; min-height: 120px; justify-content: space-between; text-align: left; }
 .water-stat:hover { border-color: rgba(59, 130, 246, 0.3); }
 
 .workout-stat .stat-header svg { color: #10b981; }
@@ -266,7 +276,7 @@
   background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
   overflow: hidden;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
 }
 
 .stat-progress-fill {
@@ -302,7 +312,7 @@
    ============================================================================ */
 
 .quick-actions-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .section-title {
@@ -324,8 +334,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 1.5rem 1rem;
+  gap: 0.5rem;
+  padding: 1.25rem 0.75rem;
   background: rgba(26, 26, 36, 0.6);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
@@ -442,11 +452,12 @@
 
 @media (max-width: 640px) {
   .home-container {
-    padding: 1rem 0.875rem;
+    padding: 0.75rem 0.5rem;
   }
 
   .home-header {
-    padding: 0.875rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
   }
 
   .greeting h1 {
@@ -458,7 +469,8 @@
   }
 
   .daily-quote-card {
-    padding: 1.25rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   .quote-text {
@@ -466,12 +478,12 @@
   }
 
   .stats-grid {
-    gap: 1rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
   }
 
   .stat-card {
-    padding: 1rem;
-    min-height: 130px;
+    padding: 0.875rem;
   }
 
   .stat-value {
@@ -479,21 +491,22 @@
   }
 
   .quick-actions {
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .action-button {
-    padding: 1.25rem 0.875rem;
+    padding: 1rem 0.625rem;
+    gap: 0.5rem;
   }
 }
 
 @media (min-width: 641px) {
   .stats-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.25rem;
+    gap: 1rem;
   }
   
-  .stat-card {
-    min-height: 160px;
+  .water-stat {
+    min-height: 140px;
   }
 }
