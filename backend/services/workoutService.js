@@ -88,19 +88,59 @@ export const workoutService = {
    * Adicionar exercício ao treino
    */
   async addExercise(workoutId, exerciseData) {
+    console.log('WorkoutService.addExercise called');
+    console.log('Workout ID:', workoutId);
+    console.log('Exercise Data:', exerciseData);
+
+    // Se order_index não foi fornecido, pegar o próximo índice disponível
+    let orderIndex = exerciseData.order_index;
+    
+    if (orderIndex === undefined || orderIndex === null) {
+      console.log('Order index não fornecido, buscando próximo disponível...');
+      
+      const { data: existingExercises, error: queryError } = await supabase
+        .from('exercises')
+        .select('order_index')
+        .eq('workout_id', workoutId)
+        .order('order_index', { ascending: false })
+        .limit(1);
+      
+      if (queryError) {
+        console.error('Erro ao buscar exercises existentes:', queryError);
+      }
+      
+      console.log('Exercícios existentes:', existingExercises);
+      
+      orderIndex = existingExercises && existingExercises.length > 0 
+        ? (existingExercises[0].order_index || 0) + 1 
+        : 0;
+      
+      console.log('Order index calculado:', orderIndex);
+    }
+
+    const insertData = {
+      workout_id: workoutId,
+      name: exerciseData.name,
+      sets: exerciseData.sets,
+      reps: exerciseData.reps,
+      rest_time: exerciseData.rest_time || null,
+      order_index: orderIndex,
+      notes: exerciseData.notes || null
+    };
+
+    console.log('Dados para inserção:', insertData);
+
     const { data, error } = await supabase
       .from('exercises')
-      .insert([{
-        workout_id: workoutId,
-        name: exerciseData.name,
-        sets: exerciseData.sets,
-        reps: exerciseData.reps,
-        rest_time: exerciseData.rest_time || null,
-        order_index: exerciseData.order_index,
-        notes: exerciseData.notes || null
-      }])
+      .insert([insertData])
       .select()
       .single();
+
+    if (error) {
+      console.error('Erro do Supabase:', error);
+    } else {
+      console.log('Exercício inserido com sucesso:', data);
+    }
 
     return { data, error };
   },
@@ -132,9 +172,9 @@ export const workoutService = {
   },
 
   /**
-   * Registrar treino realizado
+   * Registrar treino realizado com dados de performance
    */
-  async logWorkout(userId, workoutId, notes = null) {
+  async logWorkout(userId, workoutId, notes = null, performanceStats = {}) {
     // Buscar informações do treino
     const { data: workout } = await supabase
       .from('workouts')
@@ -142,14 +182,30 @@ export const workoutService = {
       .eq('id', workoutId)
       .single();
 
+    // Calcular volume total se houver workoutLog
+    let totalVolume = 0;
+    if (performanceStats.workoutLog && Array.isArray(performanceStats.workoutLog)) {
+      totalVolume = performanceStats.workoutLog.reduce((sum, log) => {
+        return sum + ((log.reps || 0) * (log.weight || 0));
+      }, 0);
+    }
+
+    const historyEntry = {
+      user_id: userId,
+      workout_id: workoutId,
+      workout_name: workout?.name || 'Treino',
+      notes: notes,
+      duration: performanceStats.duration || null,
+      total_rest_time: performanceStats.totalRestTime || 0,
+      total_sets: performanceStats.sets || 0,
+      total_exercises: performanceStats.exercises || 0,
+      total_volume: totalVolume,
+      performance_data: performanceStats.workoutLog || null
+    };
+
     const { data, error } = await supabase
       .from('workout_history')
-      .insert([{
-        user_id: userId,
-        workout_id: workoutId,
-        workout_name: workout?.name || 'Treino',
-        notes: notes
-      }])
+      .insert([historyEntry])
       .select()
       .single();
 

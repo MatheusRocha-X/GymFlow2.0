@@ -90,10 +90,14 @@ async function processWaterReminders() {
         // Atualizar timestamp do último lembrete
         lastReminderMap.set(user.id, new Date());
         
-        // Incrementar automaticamente 200ml
-        await hydrationService.logWaterIntake(user.id, 200);
+        // Incrementar automaticamente 300ml (ou conforme configuração do usuário)
+        const waterAmount = user.water_amount_ml || 300;
+        await hydrationService.logWater(user.id, { 
+          amount: waterAmount, 
+          source: 'reminder' 
+        });
         
-        console.log(`💧 Lembrete de água enviado para ${user.name}`);
+        console.log(`💧 Lembrete de água enviado para ${user.name} (+${waterAmount}ml)`);
       }
     }
   } catch (error) {

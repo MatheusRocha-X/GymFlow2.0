@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
   telegram_chat_id BIGINT UNIQUE NOT NULL,
   telegram_username TEXT,
   name TEXT NOT NULL,
-  daily_water_goal INTEGER DEFAULT 2000,
+  daily_water_goal INTEGER DEFAULT 3000, -- ml (meta diária de hidratação)
   timezone TEXT DEFAULT 'America/Sao_Paulo',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

@@ -56,7 +56,7 @@ export const hydrationService = {
       .eq('id', userId)
       .single();
 
-    const goal = userData?.daily_water_goal || 2000;
+    const goal = userData?.daily_water_goal || 3000;
     const percentage = Math.round((totalConsumed / goal) * 100);
 
     return {

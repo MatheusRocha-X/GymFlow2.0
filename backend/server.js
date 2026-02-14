@@ -15,6 +15,7 @@ import hydrationRoutes from './routes/hydration.js';
 import workoutRoutes from './routes/workouts.js';
 import reminderRoutes from './routes/reminders.js';
 import metricsRoutes from './routes/metrics.js';
+import supplementRoutes from './routes/supplements.js';
 
 // Jobs
 import { startReminderJob } from './jobs/reminderJob.js';
@@ -95,6 +96,7 @@ app.use('/api/hydration', hydrationRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/metrics', metricsRoutes);
+app.use('/api/supplements', supplementRoutes);
 
 // Rota 404
 app.use((req, res) => {

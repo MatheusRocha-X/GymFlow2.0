@@ -124,17 +124,44 @@ router.post('/:workoutId/exercises', async (req, res) => {
     const { workoutId } = req.params;
     const exerciseData = req.body;
 
+    console.log('=== Adicionando exercício ===');
+    console.log('Workout ID:', workoutId);
+    console.log('Exercise Data:', JSON.stringify(exerciseData, null, 2));
+
+    // Validação básica
+    if (!exerciseData.name || !exerciseData.sets || !exerciseData.reps) {
+      console.error('Validação falhou:', {
+        hasName: !!exerciseData.name,
+        hasSets: !!exerciseData.sets,
+        hasReps: !!exerciseData.reps
+      });
+      return res.status(400).json({ 
+        error: 'name, sets e reps são obrigatórios',
+        received: exerciseData 
+      });
+    }
+
     const { data, error } = await workoutService.addExercise(workoutId, exerciseData);
 
     if (error) {
-      console.error('Erro ao adicionar exercício:', error);
-      return res.status(500).json({ error: 'Erro ao adicionar exercício' });
+      console.error('Erro do Supabase ao adicionar exercício:', error);
+      console.error('Workout ID:', workoutId);
+      console.error('Exercise Data:', exerciseData);
+      return res.status(500).json({ 
+        error: 'Erro ao adicionar exercício',
+        details: error.message || error.toString()
+      });
     }
 
+    console.log('Exercício adicionado com sucesso:', data);
     res.json({ exercise: data });
   } catch (error) {
-    console.error('Erro ao adicionar exercício:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    console.error('Exception ao adicionar exercício:', error);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: error.message 
+    });
   }
 });
 
@@ -186,13 +213,21 @@ router.delete('/exercises/:exerciseId', async (req, res) => {
 router.post('/:workoutId/complete', async (req, res) => {
   try {
     const { workoutId } = req.params;
-    const { user_id, notes } = req.body;
+    const { user_id, notes, duration, totalRestTime, exercises, sets, workoutLog } = req.body;
 
     if (!user_id) {
       return res.status(400).json({ error: 'user_id é obrigatório' });
     }
 
-    const { data, error } = await workoutService.logWorkout(user_id, workoutId, notes);
+    const performanceStats = {
+      duration,
+      totalRestTime,
+      exercises,
+      sets,
+      workoutLog
+    };
+
+    const { data, error } = await workoutService.logWorkout(user_id, workoutId, notes, performanceStats);
 
     if (error) {
       console.error('Erro ao registrar treino:', error);

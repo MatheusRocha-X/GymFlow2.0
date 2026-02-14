@@ -6,8 +6,9 @@
 import cron from 'node-cron';
 import { reminderService } from '../services/reminderService.js';
 import { hydrationService } from '../services/hydrationService.js';
-import { sendTelegramMessage } from '../config/telegram.js';
+import { sendTelegramMessage, formatMotivationalMessage } from '../config/telegram.js';
 import { getCurrentTimeString, getCurrentDayOfWeek } from '../utils/timezone.js';
+import { supabase } from '../config/supabase.js';
 
 // Cache para evitar envios duplicados no mesmo minuto
 const sentCache = new Map();
@@ -100,14 +101,20 @@ async function checkWaterReminders() {
       // Enviar lembrete
       const chatId = reminder.users?.telegram_chat_id;
       if (chatId) {
-        const amount = reminder.water_amount_ml || 200;
-        const goal = reminder.users?.daily_water_goal || 2000;
+        const amount = reminder.water_amount_ml || 300;
+        const goal = reminder.users?.daily_water_goal || 3000;
+
+        // Buscar progresso atual
+        const { data: progress } = await hydrationService.getDailyProgress(reminder.user_id);
+        const currentAmount = progress?.total_consumed || 0;
+        const newAmount = currentAmount + amount;
+        const percentage = Math.round((newAmount / goal) * 100);
 
         const message = `
 💧 *Hora de beber água!*
 
-🥤 Sugestão: ${amount}ml
-🎯 Meta diária: ${goal}ml
+✅ +${amount}ml registrado automaticamente
+📊 Progresso: ${newAmount}ml / ${goal}ml (${percentage}%)
 
 Mantenha-se hidratado! 💪
         `;
@@ -202,6 +209,48 @@ function clearCache() {
 }
 
 /**
+ * Enviar mensagem motivacional matinal às 8h
+ */
+async function sendMotivationalMessages() {
+  try {
+    // Buscar todos os usuários com telegram_chat_id configurado
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, name, telegram_chat_id, timezone')
+      .not('telegram_chat_id', 'is', null);
+
+    if (error || !users) {
+      console.error('❌ Erro ao buscar usuários para mensagem motivacional:', error);
+      return;
+    }
+
+    for (const user of users) {
+      const userTimezone = user.timezone || 'America/Sao_Paulo';
+      const currentTime = getCurrentTimeString(userTimezone);
+      
+      // Verificar se é 8h no timezone do usuário
+      if (currentTime === '08:00') {
+        const now = new Date();
+        const cacheKey = `motivational-${user.id}-${now.getDate()}`;
+        
+        // Verificar cache para evitar envio duplicado
+        if (sentCache.has(cacheKey)) {
+          continue;
+        }
+
+        const message = formatMotivationalMessage(user.name || 'Campeão');
+        await sendTelegramMessage(user.telegram_chat_id, message);
+        
+        sentCache.set(cacheKey, true);
+        console.log(`✅ Mensagem motivacional enviada para ${user.name}`);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Erro ao enviar mensagens motivacionais:', error);
+  }
+}
+
+/**
  * Iniciar job de lembretes
  */
 export function startReminderJob() {
@@ -211,8 +260,12 @@ export function startReminderJob() {
   // Verificar outros lembretes a cada minuto
   cron.schedule('* * * * *', checkScheduledReminders);
 
+  // Enviar mensagens motivacionais a cada minuto (verifica timezone)
+  cron.schedule('* * * * *', sendMotivationalMessages);
+
   // Limpar cache a cada hora
   cron.schedule('0 * * * *', clearCache);
 
   console.log('⏰ Job de lembretes iniciado');
+  console.log('☀️ Job de mensagens motivacionais iniciado (8h da manhã)');
 }

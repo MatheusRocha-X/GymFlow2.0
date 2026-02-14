@@ -107,3 +107,39 @@ export function formatReminderToggledMessage(reminderType, reminderName, isActiv
          `<i>${name}</i> foi ${isActive ? 'ativado' : 'pausado'}. ${emoji}\n\n` +
          `${isActive ? 'Você voltará a receber notificações nos horários configurados.' : 'Você não receberá notificações até reativar este lembrete.'}`;
 }
+
+/**
+ * Formata mensagem de lembrete deletado
+ */
+export function formatReminderDeletedMessage(reminderType, reminderName) {
+  const icons = {
+    water: '💧',
+    workout: '💪',
+    custom: '🔔'
+  };
+  
+  const icon = icons[reminderType] || '🔔';
+  const name = reminderName || (reminderType === 'water' ? 'Hidratação' : 'Lembrete');
+  
+  return `${icon} <b>Lembrete Removido</b>\n\n` +
+         `<i>${name}</i> foi excluído com sucesso. 🗑️\n\n` +
+         `Você não receberá mais notificações deste lembrete.`;
+}
+
+/**
+ * Formata mensagem motivacional matinal
+ */
+export function formatMotivationalMessage(userName) {
+  const messages = [
+    `☀️ <b>Bom dia, ${userName}!</b>\n\n🔥 Um novo dia é uma nova oportunidade para superar seus limites!\n\n💪 Lembre-se: o progresso acontece um treino por vez. Vamos começar esse dia com energia!`,
+    `🌅 <b>Bom dia, ${userName}!</b>\n\n✨ Cada manhã traz uma nova chance de se tornar a melhor versão de si mesmo!\n\n🏋️ Seu corpo é capaz de coisas incríveis. Acredite no seu potencial!`,
+    `☕ <b>Bom dia, ${userName}!</b>\n\n💫 O sucesso é a soma de pequenos esforços repetidos dia após dia.\n\n🎯 Hoje é o dia perfeito para dar mais um passo em direção aos seus objetivos!`,
+    `🌞 <b>Bom dia, ${userName}!</b>\n\n🚀 Grandes conquistas começam com pequenas decisões diárias!\n\n💪 Seja consistente, seja forte, seja imparável!`,
+    `🌄 <b>Bom dia, ${userName}!</b>\n\n⚡ Você não precisa ser perfeito, só precisa ser consistente!\n\n🔥 Cada dia de treino te leva mais perto dos seus sonhos!`,
+    `🌻 <b>Bom dia, ${userName}!</b>\n\n🌟 Acredite no processo. Confie no seu esforço. Os resultados virão!\n\n💯 Hoje é seu dia de brilhar!`,
+    `☀️ <b>Bom dia, ${userName}!</b>\n\n💎 A disciplina é a ponte entre suas metas e suas conquistas!\n\n🏆 Você está mais forte do que ontem. Continue!`
+  ];
+  
+  const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+  return randomMessage;
+}
