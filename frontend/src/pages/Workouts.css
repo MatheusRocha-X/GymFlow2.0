@@ -592,6 +592,12 @@
   display: flex;
   align-items: flex-start;
   gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-title > div {
+  min-width: 0;
 }
 
 .modal-title svg {
@@ -613,10 +619,12 @@
   margin: 0;
 }
 
-.modal-close {
+.workouts-modal-close {
   width: 40px;
   height: 40px;
   min-width: 40px;
+  flex-shrink: 0;
+  align-self: flex-start;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -628,7 +636,7 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.modal-close:hover {
+.workouts-modal-close:hover {
   background: rgba(239, 68, 68, 0.15);
   border-color: rgba(239, 68, 68, 0.3);
   color: #ef4444;
@@ -1607,7 +1615,6 @@
     max-width: none;
     height: 100dvh;
     max-height: 100dvh;
-    --picker-sticky-offset: 86px;
     border-radius: 0;
     padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
     animation: none;
@@ -1615,23 +1622,16 @@
   }
 
   .modal-header-enhanced {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background: rgba(12, 17, 29, 0.96);
-    backdrop-filter: blur(6px);
-    margin: 0 -1rem 1rem;
-    padding: 1rem;
+    position: static;
+    margin: 0 0 1rem;
+    padding: 0 0 1rem;
   }
 
   .exercise-picker-toolbar {
-    position: sticky;
-    top: var(--picker-sticky-offset);
-    z-index: 18;
-    background: rgba(12, 17, 29, 0.97);
-    margin: 0 -1rem 0.9rem;
-    padding: 0.75rem 1rem 0.65rem;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    position: static;
+    margin: 0 0 0.9rem;
+    padding: 0;
+    border-bottom: none;
   }
 
   .exercise-picker-toolbar .search-section-modal,
@@ -1692,7 +1692,7 @@
     font-size: 1.375rem;
   }
 
-  .modal-close {
+  .workouts-modal-close {
     margin-left: auto;
   }
 }

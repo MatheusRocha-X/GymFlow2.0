@@ -737,7 +737,7 @@ export default function Workouts() {
                   <p>Gerador inteligente de divisoes com controle de volume e tempo.</p>
                 </div>
               </div>
-              <button className="modal-close" onClick={closeAiTrainingModal}>
+              <button className="workouts-modal-close" onClick={closeAiTrainingModal}>
                 <X size={24} />
               </button>
             </div>
@@ -927,7 +927,7 @@ export default function Workouts() {
                   <p>Selecione um exercício para adicionar ao treino</p>
                 </div>
               </div>
-              <button className="modal-close" onClick={closeExercisePicker}>
+              <button className="workouts-modal-close" onClick={closeExercisePicker}>
                 <X size={24} />
               </button>
             </div>
