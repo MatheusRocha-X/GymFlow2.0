@@ -97,6 +97,12 @@
   line-height: 1;
 }
 
+.evo-stat-subtext {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 2px;
+}
+
 .imc-category {
   font-size: 0.75rem;
   font-weight: 600;

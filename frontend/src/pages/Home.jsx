@@ -44,12 +44,31 @@ export default function Home() {
 
   useEffect(() => {
     loadStats();
+    if (!user?.id) return;
+
+    const intervalId = setInterval(() => {
+      loadStats();
+    }, 60000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadStats();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user]);
 
   const loadStats = async () => {
     try {
+      if (!user?.id) return;
       // Carregar progresso de água
-      const { data: waterData } = await api.getWaterProgress(user.id);
+      const waterData = await api.getWaterProgress(user.id);
       const waterProgress = waterData?.percentage || 0;
 
       // Carregar histórico de treinos (últimos 7 dias)
@@ -168,3 +187,4 @@ export default function Home() {
     </div>
   );
 }
+

@@ -113,12 +113,32 @@ export default function Evolution() {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', { 
+    if (!dateString) return '-';
+    const [year, month, day] = String(dateString).split('-');
+    if (!year || !month || !day) {
+      const fallbackDate = new Date(dateString);
+      return fallbackDate.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+    return date.toLocaleDateString('pt-BR', {
       day: '2-digit', 
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  const getMetricDate = (metric) => metric.date || (metric.measured_at ? metric.measured_at.split('T')[0] : null);
+  const formatShortDate = (dateString) => {
+    if (!dateString) return '-';
+    const [year, month, day] = String(dateString).split('-');
+    if (!year || !month || !day) return '-';
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   };
 
   const renderTrend = (diff, unit) => {
@@ -126,7 +146,7 @@ export default function Evolution() {
     
     const isPositive = diff > 0;
     const Icon = isPositive ? TrendingUp : TrendingDown;
-    const colorClass = isPositive ? 'trend-up' : 'trend-down';
+    const colorClass = isPositive ? 'positive' : 'negative';
     
     return (
       <span className={`trend ${colorClass}`}>
@@ -169,6 +189,9 @@ export default function Evolution() {
                 <span className="evo-stat-label">Peso Atual</span>
                 <span className="evo-stat-value">{stats.current.weight} kg</span>
                 {renderTrend(stats.weightDiff, 'kg')}
+                {stats.previous && (
+                  <span className="evo-stat-subtext">Evolução total desde {formatDate(stats.previous.date || stats.previous.measured_at?.split('T')[0])}</span>
+                )}
               </div>
             </div>
 
@@ -242,7 +265,7 @@ export default function Evolution() {
                         <span className="chart-value">{metric.weight}kg</span>
                       </div>
                     </div>
-                    <span className="chart-label">{new Date(metric.measured_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                    <span className="chart-label">{formatShortDate(getMetricDate(metric))}</span>
                   </div>
                 );
               })}
@@ -278,7 +301,7 @@ export default function Evolution() {
                   <div key={metric.id} className="metric-item">
                     <div className="metric-date-badge">
                       <Calendar size={14} />
-                      {formatDate(metric.measured_at)}
+                      {formatDate(getMetricDate(metric))}
                     </div>
                     
                     <div className="metric-data">

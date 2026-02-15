@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Plus, Dumbbell, Trash2, Check, X, Search, BookOpen, Play, Edit2, ChevronDown, ChevronUp, Filter, Zap, Activity, Layers3, Sparkles, Clock3, GitBranchPlus, Gauge } from 'lucide-react';
 import api from '../services/api';
@@ -10,6 +10,7 @@ import { PROFILE_LIBRARY, createWorkoutPlan, parseDurationToMinutes, canonicalCa
 import './Workouts.css';
 
 export default function Workouts() {
+  const EXERCISES_PER_PAGE = 24;
   const { user } = useAuth();
   const [workouts, setWorkouts] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -37,10 +38,24 @@ export default function Workouts() {
     value: 0,
     label: ''
   });
+  const [exerciseVisibleCount, setExerciseVisibleCount] = useState(EXERCISES_PER_PAGE);
+  const deferredSearchExercise = useDeferredValue(searchExercise);
+  const deferredWorkoutSearch = useDeferredValue(workoutSearch);
 
   useEffect(() => {
     loadWorkouts();
   }, [user]);
+
+  useEffect(() => {
+    if (!showExercisePicker) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showExercisePicker]);
 
   const splitLabels = {
     ABC: 'ABC',
@@ -50,19 +65,27 @@ export default function Workouts() {
     FULL_BODY: 'FullBody'
   };
 
-  const exerciseByName = exercisesDatabase.reduce((acc, exercise) => {
-    acc[exercise.name] = exercise;
-    return acc;
-  }, {});
+  const exerciseByName = useMemo(
+    () =>
+      exercisesDatabase.reduce((acc, exercise) => {
+        acc[exercise.name] = exercise;
+        return acc;
+      }, {}),
+    []
+  );
 
-  const exercisesByCanonicalCategory = exercisesDatabase.reduce((acc, exercise) => {
-    const category = canonicalCategory(exercise.category);
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(exercise);
-    return acc;
-  }, {});
+  const exercisesByCanonicalCategory = useMemo(
+    () =>
+      exercisesDatabase.reduce((acc, exercise) => {
+        const category = canonicalCategory(exercise.category);
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(exercise);
+        return acc;
+      }, {}),
+    []
+  );
 
   const loadWorkouts = async () => {
     try {
@@ -167,6 +190,7 @@ export default function Workouts() {
 
   const openExercisePicker = (workout) => {
     setCurrentWorkout(workout);
+    setExerciseVisibleCount(EXERCISES_PER_PAGE);
     setShowExercisePicker(true);
   };
 
@@ -176,6 +200,7 @@ export default function Workouts() {
     setSearchExercise('');
     setSelectedCategory('Todos');
     setExerciseDetails({ sets: 3, reps: 12, rest_time: 60 });
+    setExerciseVisibleCount(EXERCISES_PER_PAGE);
   };
 
   const toggleWorkoutExpanded = (workoutId) => {
@@ -374,43 +399,62 @@ export default function Workouts() {
     }
   };
 
-  const filteredExercises = exercisesDatabase.filter(ex => {
-    const matchesSearch = ex.name.toLowerCase().includes(searchExercise.toLowerCase()) ||
-      ex.category.toLowerCase().includes(searchExercise.toLowerCase()) ||
-      ex.muscles?.some(m => m.toLowerCase().includes(searchExercise.toLowerCase()));
-    
-    const matchesCategory = selectedCategory === 'Todos' || ex.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+  const filteredExercises = useMemo(() => {
+    const normalizedSearch = deferredSearchExercise.trim().toLowerCase();
 
-  const filteredWorkouts = workouts.filter((workout) => {
-    const q = workoutSearch.trim().toLowerCase();
-    if (!q) return true;
+    return exercisesDatabase.filter((ex) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        ex.name.toLowerCase().includes(normalizedSearch) ||
+        ex.category.toLowerCase().includes(normalizedSearch) ||
+        ex.muscles?.some((m) => m.toLowerCase().includes(normalizedSearch));
 
-    const matchesWorkout =
-      workout.name?.toLowerCase().includes(q) ||
-      workout.description?.toLowerCase().includes(q);
-    const matchesExercise = workout.exercises?.some((exercise) =>
-      exercise.name?.toLowerCase().includes(q)
-    );
+      const matchesCategory = selectedCategory === 'Todos' || ex.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [deferredSearchExercise, selectedCategory]);
 
-    return matchesWorkout || matchesExercise;
-  });
+  const visibleExercises = useMemo(
+    () => filteredExercises.slice(0, exerciseVisibleCount),
+    [filteredExercises, exerciseVisibleCount]
+  );
+  const hasMoreExercises = visibleExercises.length < filteredExercises.length;
 
-  const totalExercisesInAllWorkouts = workouts.reduce(
-    (sum, workout) => sum + (workout.exercises?.length || 0),
-    0
+  const filteredWorkouts = useMemo(
+    () =>
+      workouts.filter((workout) => {
+        const q = deferredWorkoutSearch.trim().toLowerCase();
+        if (!q) return true;
+
+        const matchesWorkout =
+          workout.name?.toLowerCase().includes(q) ||
+          workout.description?.toLowerCase().includes(q);
+        const matchesExercise = workout.exercises?.some((exercise) =>
+          exercise.name?.toLowerCase().includes(q)
+        );
+
+        return matchesWorkout || matchesExercise;
+      }),
+    [workouts, deferredWorkoutSearch]
   );
 
-  const totalSetsInAllWorkouts = workouts.reduce(
-    (sum, workout) =>
-      sum +
-      (workout.exercises?.reduce(
-        (exerciseSum, exercise) => exerciseSum + (exercise.sets || 0),
+  const totalExercisesInAllWorkouts = useMemo(
+    () => workouts.reduce((sum, workout) => sum + (workout.exercises?.length || 0), 0),
+    [workouts]
+  );
+
+  const totalSetsInAllWorkouts = useMemo(
+    () =>
+      workouts.reduce(
+        (sum, workout) =>
+          sum +
+          (workout.exercises?.reduce(
+            (exerciseSum, exercise) => exerciseSum + (exercise.sets || 0),
+            0
+          ) || 0),
         0
-      ) || 0),
-    0
+      ),
+    [workouts]
   );
 
   return (
@@ -873,7 +917,7 @@ export default function Workouts() {
 
       {/* Exercise Picker Modal */}
       {showExercisePicker && (
-        <div className="modal-overlay" onClick={closeExercisePicker}>
+        <div className="modal-overlay exercise-picker-overlay" onClick={closeExercisePicker}>
           <div className="modal-content exercise-picker-modal-enhanced" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header-enhanced">
               <div className="modal-title">
@@ -890,6 +934,7 @@ export default function Workouts() {
 
             {!selectedExercise ? (
               <>
+                <div className="exercise-picker-toolbar">
                 <div className="search-section-modal">
                   <div className="search-bar-modal">
                     <Search size={20} />
@@ -897,7 +942,10 @@ export default function Workouts() {
                       type="text"
                       placeholder="Buscar por nome, categoria ou músculo..."
                       value={searchExercise}
-                      onChange={(e) => setSearchExercise(e.target.value)}
+                      onChange={(e) => {
+                        setSearchExercise(e.target.value);
+                        setExerciseVisibleCount(EXERCISES_PER_PAGE);
+                      }}
                       autoFocus
                     />
                     {searchExercise && (
@@ -915,7 +963,10 @@ export default function Workouts() {
                       <button
                         key={cat}
                         className={`category-pill ${selectedCategory === cat ? 'active' : ''}`}
-                        onClick={() => setSelectedCategory(cat)}
+                        onClick={() => {
+                          setSelectedCategory(cat);
+                          setExerciseVisibleCount(EXERCISES_PER_PAGE);
+                        }}
                       >
                         {cat}
                       </button>
@@ -927,16 +978,17 @@ export default function Workouts() {
                   <span>{filteredExercises.length} exercício(s) encontrado(s)</span>
                 </div>
 
+                </div>
                 <div className="exercises-picker-grid-enhanced">
                   {filteredExercises.length > 0 ? (
-                    filteredExercises.map((exercise) => (
+                    visibleExercises.map((exercise) => (
                       <div
                         key={exercise.id}
                         className="exercise-picker-card"
                         onClick={() => setSelectedExercise(exercise)}
                       >
                         <div className="exercise-card-gif">
-                          <img src={exercise.gifUrl} alt={exercise.name} loading="lazy" />
+                          <img src={exercise.gifUrl} alt={exercise.name} loading="lazy" decoding="async" />
                           <div className="exercise-card-overlay">
                             <Plus size={24} />
                             <span>Adicionar</span>
@@ -963,6 +1015,18 @@ export default function Workouts() {
                     </div>
                   )}
                 </div>
+
+                {hasMoreExercises && (
+                  <div className="exercise-load-more-wrap">
+                    <button
+                      type="button"
+                      className="exercise-load-more-btn"
+                      onClick={() => setExerciseVisibleCount((prev) => prev + EXERCISES_PER_PAGE)}
+                    >
+                      Mostrar mais exercícios
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <div className="exercise-config-enhanced">
