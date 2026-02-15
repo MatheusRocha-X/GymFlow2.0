@@ -119,15 +119,19 @@ async function checkWaterReminders() {
 Mantenha-se hidratado! 💪
         `;
 
-        await sendTelegramMessage(chatId, message);
+        const sent = await sendTelegramMessage(chatId, message);
+        if (!sent) {
+          console.log(`⚠️ Falha ao enviar lembrete de água para usuário ${reminder.users.name}`);
+          continue;
+        }
 
-        // Registrar no histórico automaticamente
+        // Registrar no histórico somente após envio confirmado
         await hydrationService.logWater(reminder.user_id, {
           amount,
           source: 'reminder'
         });
 
-        // Atualizar timestamp de último envio
+        // Atualizar timestamp de último envio somente após envio confirmado
         await reminderService.updateLastSent(reminder.id);
 
         console.log(`✅ Lembrete de água enviado para usuário ${reminder.users.name}`);
@@ -182,7 +186,12 @@ ${reminder.description || ''}
       }
 
       if (message) {
-        await sendTelegramMessage(chatId, message);
+        const sent = await sendTelegramMessage(chatId, message);
+        if (!sent) {
+          console.log(`⚠️ Falha ao enviar lembrete "${reminder.title}" para ${reminder.users.name}`);
+          continue;
+        }
+
         await reminderService.updateLastSent(reminder.id);
 
         // Adicionar ao cache

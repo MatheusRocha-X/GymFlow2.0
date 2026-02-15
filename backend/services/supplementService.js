@@ -1,22 +1,22 @@
-import { supabase } from '../config/supabase.js';
+﻿import { supabase } from '../config/supabase.js';
 
 /**
- * Serviço para gerenciar suplementos com integração ao Mercado Livre
+ * ServiÃ§o para gerenciar suplementos com integraÃ§Ã£o ao Mercado Livre
  */
 class SupplementService {
   /**
    * Resolve URLs encurtadas do Mercado Livre seguindo redirects ou extraindo do HTML
    * @param {string} url - URL original (pode ser encurtada)
-   * @returns {Promise<string>} - URL final após redirects ou MLB ID extraído
+   * @returns {Promise<string>} - URL final apÃ³s redirects ou MLB ID extraÃ­do
    */
   async resolveShortUrl(url) {
     try {
-      // Se não for link encurtado, retorna a URL original
+      // Se nÃ£o for link encurtado, retorna a URL original
       if (!url.includes('/sec/') && !url.includes('mpago.la')) {
         return url;
       }
 
-      console.log('🔗 Resolvendo link encurtado:', url);
+      console.log('ðŸ”— Resolvendo link encurtado:', url);
       
       // Para links encurtados, tentar fazer GET e extrair MLB ID do HTML
       const response = await fetch(url, {
@@ -33,19 +33,19 @@ class SupplementService {
       if (mlbMatch) {
         const mlbId = mlbMatch[0].toUpperCase();
         const fullId = mlbId.includes('-') ? mlbId : mlbId.replace(/^MLB/, 'MLB-');
-        console.log('✅ MLB ID encontrado no HTML:', fullId);
+        console.log('âœ… MLB ID encontrado no HTML:', fullId);
         return `https://produto.mercadolivre.com.br/${fullId}`;
       }
       
-      // Se não encontrou, tentar procurar por outras URLs no HTML
+      // Se nÃ£o encontrou, tentar procurar por outras URLs no HTML
       const urlMatch = html.match(/https:\/\/[^"']*MLB[^"']*/i);
       if (urlMatch) {
-        console.log('✅ URL completa encontrada no HTML:', urlMatch[0]);
+        console.log('âœ… URL completa encontrada no HTML:', urlMatch[0]);
         return urlMatch[0];
       }
       
-      console.log('❌ Não conseguiu resolver o link encurtado');
-      return url; // Retorna a URL original se não conseguir resolver
+      console.log('âŒ NÃ£o conseguiu resolver o link encurtado');
+      return url; // Retorna a URL original se nÃ£o conseguir resolver
     } catch (error) {
       console.error('Erro ao resolver URL:', error);
       return url; // Retorna a URL original em caso de erro
@@ -66,7 +66,7 @@ class SupplementService {
       // Limpar a URL
       url = url.trim();
 
-      // Suporta vários formatos de URL do Mercado Livre
+      // Suporta vÃ¡rios formatos de URL do Mercado Livre
       const patterns = [
         /MLB-?\d+/i,  // MLB-123456789 ou MLB123456789
         /mlb-?\d+/i,  // mlb-123456789 (case insensitive)
@@ -86,7 +86,7 @@ class SupplementService {
         }
       }
       
-      console.log('❌ Nenhum padrão correspondeu para:', url);
+      console.log('âŒ Nenhum padrÃ£o correspondeu para:', url);
       return null;
     } catch (error) {
       console.error('Erro ao extrair ID do Mercado Livre:', error);
@@ -95,7 +95,7 @@ class SupplementService {
   }
 
   /**
-   * Busca informações de um produto no Mercado Livre via scraping da página
+   * Busca informaÃ§Ãµes de um produto no Mercado Livre via scraping da pÃ¡gina
    * @param {string} mercadolivreId - ID do produto (ex: MLB-123456789)
    * @returns {Object} - Dados do produto
    */
@@ -105,15 +105,15 @@ class SupplementService {
       const urlId = mercadolivreId.startsWith('MLB') ? mercadolivreId : `MLB${mercadolivreId.replace('-', '')}`;
       const cleanId = mercadolivreId.replace('-', '').replace('MLB', '');
       
-      // URL da página do produto
+      // URL da pÃ¡gina do produto
       const productUrl = `https://produto.mercadolivre.com.br/${urlId}`;
       
-      console.log('🔍 Fazendo scraping da página:', productUrl);
+      console.log('ðŸ” Fazendo scraping da pÃ¡gina:', productUrl);
       
       // Pequeno delay para evitar bloqueio
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Fazer requisição para a página do produto
+      // Fazer requisiÃ§Ã£o para a pÃ¡gina do produto
       const response = await fetch(productUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -124,69 +124,60 @@ class SupplementService {
       });
       
       if (!response.ok) {
-        throw new Error(`Erro ao acessar página do produto: ${response.status}`);
+        throw new Error(`Erro ao acessar pÃ¡gina do produto: ${response.status}`);
       }
 
       const html = await response.text();
       
-      // Extrair informações usando expressões regulares
+      // Extrair informaÃ§Ãµes usando expressÃµes regulares
       const productData = {
         mercadolivre_id: cleanId,
         permalink: productUrl
       };
 
-      // Extrair título
-      const titleMatch = html.match(/<h1[^>]*class="[^"]*ui-pdp-title[^"]*"[^>]*>([^<]+)<\/h1>/i) ||
-                        html.match(/<title>([^|]+)\|/i) ||
-                        html.match(/"title":"([^"]+)"/i);
-      productData.title = titleMatch ? titleMatch[1].trim() : 'Produto sem título';
+      const titleMatch =
+        html.match(/<h1[^>]*class="[^"]*ui-pdp-title[^"]*"[^>]*>([^<]+)<\/h1>/i) ||
+        html.match(/<title>([^|]+)\|/i) ||
+        html.match(/"title":"([^"]+)"/i);
+      productData.title = titleMatch ? titleMatch[1].trim() : 'Produto sem tÃ­tulo';
 
-      // Extrair preço
-      const priceMatch = html.match(/"price":\s*(\d+(?:\.\d+)?)/) ||
-                        html.match(/"original_price":\s*(\d+(?:\.\d+)?)/) ||
-                        html.match(/class="[^"]*price-tag[^"]*"[^>]*>\s*R\$\s*([\d.,]+)/i);
+      const priceMatch =
+        html.match(/"price":\s*(\d+(?:\.\d+)?)/) ||
+        html.match(/"original_price":\s*(\d+(?:\.\d+)?)/) ||
+        html.match(/class="[^"]*price-tag[^"]*"[^>]*>\s*R\$\s*([\d.,]+)/i);
       if (priceMatch) {
-        productData.price = parseFloat(priceMatch[1].replace(',', '.'));
+        productData.price = parseFloat(String(priceMatch[1]).replace(',', '.'));
         productData.original_price = productData.price;
       } else {
         productData.price = 0;
         productData.original_price = 0;
       }
 
-      // Extrair imagem
-      const imageMatch = html.match(/"gallery_images":\s*\[\s*{\s*"src":\s*"([^"]+)"/) ||
-                       html.match(/"picture_url":"([^"]+)"/) ||
-                       html.match(/data-zoom="([^"]+)"/i);
+      const imageMatch =
+        html.match(/"gallery_images":\s*\[\s*{\s*"src":\s*"([^"]+)"/) ||
+        html.match(/"picture_url":"([^"]+)"/) ||
+        html.match(/data-zoom="([^"]+)"/i);
       productData.image_url = imageMatch ? imageMatch[1] : null;
 
-      // Extrair descrição (mais complexo, pegar do JSON ou meta description)
-      const descMatch = html.match(/"description":\s*"([^"]+)"/) ||
-                       html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"/i);
+      const descMatch =
+        html.match(/"description":\s*"([^"]+)"/) ||
+        html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"/i);
       productData.description = descMatch ? descMatch[1] : productData.title;
 
-      // Valores padrão
       productData.stock_available = true;
       productData.rating = null;
       productData.total_reviews = 0;
 
-      console.log('✅ Produto extraído:', productData.title, '- R$', productData.price);
+      console.log('âœ… Produto extraÃ­do:', productData.title, '- R$', productData.price);
       return productData;
-      
     } catch (error) {
       console.error('Erro ao buscar produto no Mercado Livre:', error);
-      throw new Error('Não foi possível buscar informações do produto no Mercado Livre');
+      throw new Error('NÃ£o foi possÃ­vel buscar informaÃ§Ãµes do produto no Mercado Livre');
     }
   }
-
-  /**
-   * Cria um novo suplemento
-   * @param {Object} supplementData - Dados do suplemento
-   * @param {string} userId - ID do usuário (deve ser admin)
-   * @returns {Object} - Suplemento criado
-   */
   async createSupplement(supplementData, userId) {
     try {
-      // Verificar se usuário é admin
+      // Verificar se usuÃ¡rio Ã© admin
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('is_admin')
@@ -259,7 +250,7 @@ class SupplementService {
    */
   async updateSupplement(supplementId, supplementData, userId) {
     try {
-      // Verificar se usuário é admin
+      // Verificar se usuÃ¡rio Ã© admin
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('is_admin')
@@ -299,7 +290,7 @@ class SupplementService {
    */
   async syncWithMercadoLivre(supplementId, userId) {
     try {
-      // Verificar se usuário é admin
+      // Verificar se usuÃ¡rio Ã© admin
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('is_admin')
@@ -318,11 +309,11 @@ class SupplementService {
         .single();
 
       if (suppError || !supplement) {
-        throw new Error('Suplemento não encontrado');
+        throw new Error('Suplemento nÃ£o encontrado');
       }
 
       if (!supplement.mercadolivre_id) {
-        throw new Error('Este suplemento não possui ID do Mercado Livre');
+        throw new Error('Este suplemento nÃ£o possui ID do Mercado Livre');
       }
 
       // Buscar dados atualizados
@@ -356,7 +347,7 @@ class SupplementService {
   }
 
   /**
-   * Lista todos os suplementos ativos (público)
+   * Lista todos os suplementos ativos (pÃºblico)
    */
   async listSupplements(filters = {}) {
     try {
@@ -441,7 +432,7 @@ class SupplementService {
       return data;
     } catch (error) {
       console.error('Erro ao registrar clique:', error);
-      // Não lança erro para não impedir o redirecionamento
+      // NÃ£o lanÃ§a erro para nÃ£o impedir o redirecionamento
     }
   }
 
@@ -450,7 +441,7 @@ class SupplementService {
    */
   async deleteSupplement(supplementId, userId) {
     try {
-      // Verificar se usuário é admin
+      // Verificar se usuÃ¡rio Ã© admin
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('is_admin')
@@ -513,11 +504,11 @@ class SupplementService {
   }
 
   /**
-   * Obtém estatísticas de cliques (admin)
+   * ObtÃ©m estatÃ­sticas de cliques (admin)
    */
   async getClickStats(userId, filters = {}) {
     try {
-      // Verificar se usuário é admin
+      // Verificar se usuÃ¡rio Ã© admin
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('is_admin')
@@ -553,7 +544,7 @@ class SupplementService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
+      console.error('Erro ao buscar estatÃ­sticas:', error);
       throw error;
     }
   }

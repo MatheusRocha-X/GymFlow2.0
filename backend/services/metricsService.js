@@ -32,6 +32,7 @@ export const metricsService = {
       .from('body_metrics')
       .select('*')
       .eq('user_id', userId)
+      .order('date', { ascending: false })
       .order('measured_at', { ascending: false })
       .limit(limit);
 
@@ -42,14 +43,28 @@ export const metricsService = {
    * Buscar estatísticas do usuário
    */
   async getUserStats(userId) {
-    const { data, error } = await supabase
-      .from('body_metrics')
-      .select('weight, body_fat_percentage, measured_at')
-      .eq('user_id', userId)
-      .order('measured_at', { ascending: false })
-      .limit(2);
+    const [latestResult, firstResult] = await Promise.all([
+      supabase
+        .from('body_metrics')
+        .select('weight, body_fat_percentage, measured_at, date')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .order('measured_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('body_metrics')
+        .select('weight, body_fat_percentage, measured_at, date')
+        .eq('user_id', userId)
+        .order('date', { ascending: true })
+        .order('measured_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+    ]);
 
-    if (error || !data || data.length === 0) {
+    const latestError = latestResult.error;
+    const firstError = firstResult.error;
+    if (latestError || firstError) {
       return {
         data: {
           current: null,
@@ -57,22 +72,34 @@ export const metricsService = {
           weightDiff: null,
           fatDiff: null
         },
-        error
+        error: latestError || firstError
       };
     }
 
-    const current = data[0];
-    const previous = data.length > 1 ? data[1] : null;
+    const current = latestResult.data;
+    const baseline = firstResult.data;
 
-    const weightDiff = previous ? parseFloat((current.weight - previous.weight).toFixed(2)) : null;
-    const fatDiff = previous && current.body_fat_percentage && previous.body_fat_percentage
-      ? parseFloat((current.body_fat_percentage - previous.body_fat_percentage).toFixed(2))
+    if (!current) {
+      return {
+        data: {
+          current: null,
+          previous: null,
+          weightDiff: null,
+          fatDiff: null
+        },
+        error: null
+      };
+    }
+
+    const weightDiff = baseline && current ? parseFloat((current.weight - baseline.weight).toFixed(2)) : null;
+    const fatDiff = baseline && current.body_fat_percentage && baseline.body_fat_percentage
+      ? parseFloat((current.body_fat_percentage - baseline.body_fat_percentage).toFixed(2))
       : null;
 
     return {
       data: {
         current,
-        previous,
+        previous: baseline,
         weightDiff,
         fatDiff
       },
@@ -114,6 +141,7 @@ export const metricsService = {
       .from('body_metrics')
       .select('*')
       .eq('user_id', userId)
+      .order('date', { ascending: false })
       .order('measured_at', { ascending: false })
       .limit(1)
       .single();

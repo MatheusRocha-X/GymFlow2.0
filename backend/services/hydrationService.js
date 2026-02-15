@@ -1,25 +1,63 @@
 /**
- * Service de Hidratação
+ * Hydration service
  */
 
 import { supabase } from '../config/supabase.js';
 
 export const hydrationService = {
   /**
-   * Registrar consumo de água
+   * Fetch user timezone (fallback: America/Sao_Paulo).
+   */
+  async getUserTimezone(userId) {
+    const { data } = await supabase
+      .from('users')
+      .select('timezone')
+      .eq('id', userId)
+      .single();
+
+    return data?.timezone || 'America/Sao_Paulo';
+  },
+
+  /**
+   * Returns local date in YYYY-MM-DD for a timezone.
+   */
+  getDateInTimezone(timezone) {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+
+    const parts = formatter.formatToParts(new Date());
+    const values = {};
+
+    for (const part of parts) {
+      if (part.type !== 'literal') values[part.type] = part.value;
+    }
+
+    return `${values.year}-${values.month}-${values.day}`;
+  },
+
+  /**
+   * Log water intake.
    */
   async logWater(userId, data) {
     const amount = typeof data === 'number' ? data : data.amount;
     const source = typeof data === 'object' ? (data.source || 'manual') : 'manual';
+    const timezone = await this.getUserTimezone(userId);
+    const localDate = this.getDateInTimezone(timezone);
 
     const { data: result, error } = await supabase
       .from('hydration_history')
-      .insert([{
-        user_id: userId,
-        amount: amount,
-        source: source,
-        date: new Date().toISOString().split('T')[0]
-      }])
+      .insert([
+        {
+          user_id: userId,
+          amount,
+          source,
+          date: localDate
+        }
+      ])
       .select()
       .single();
 
@@ -27,17 +65,18 @@ export const hydrationService = {
   },
 
   /**
-   * Alias para compatibilidade
+   * Alias for compatibility.
    */
   async logWaterIntake(userId, amount) {
     return this.logWater(userId, { amount, source: 'manual' });
   },
 
   /**
-   * Buscar progresso diário
+   * Fetch daily progress.
    */
   async getDailyProgress(userId, date = null) {
-    const targetDate = date || new Date().toISOString().split('T')[0];
+    const timezone = await this.getUserTimezone(userId);
+    const targetDate = date || this.getDateInTimezone(timezone);
 
     const { data, error } = await supabase
       .from('hydration_history')
@@ -49,7 +88,6 @@ export const hydrationService = {
 
     const totalConsumed = data.reduce((sum, record) => sum + record.amount, 0);
 
-    // Buscar meta do usuário
     const { data: userData } = await supabase
       .from('users')
       .select('daily_water_goal')
@@ -63,15 +101,15 @@ export const hydrationService = {
       data: {
         date: targetDate,
         total_consumed: totalConsumed,
-        goal: goal,
-        percentage: percentage
+        goal,
+        percentage
       },
       error: null
     };
   },
 
   /**
-   * Buscar histórico de hidratação (últimos 7 dias)
+   * Fetch hydration history.
    */
   async getHistory(userId, days = 7) {
     const { data, error } = await supabase
@@ -85,16 +123,14 @@ export const hydrationService = {
   },
 
   /**
-   * Buscar histórico agrupado por dia
+   * Fetch grouped daily hydration history.
    */
   async getDailyHistory(userId, days = 7) {
-    const { data, error } = await supabase
-      .rpc('get_daily_hydration_summary', {
-        p_user_id: userId,
-        p_days: days
-      });
+    const { data, error } = await supabase.rpc('get_daily_hydration_summary', {
+      p_user_id: userId,
+      p_days: days
+    });
 
-    // Se a função RPC não existir, fazer manualmente
     if (error && error.message.includes('does not exist')) {
       const { data: records } = await supabase
         .from('hydration_history')
@@ -105,17 +141,14 @@ export const hydrationService = {
 
       if (!records) return { data: [], error: null };
 
-      // Agrupar por data
       const grouped = records.reduce((acc, record) => {
-        if (!acc[record.date]) {
-          acc[record.date] = 0;
-        }
+        if (!acc[record.date]) acc[record.date] = 0;
         acc[record.date] += record.amount;
         return acc;
       }, {});
 
-      const result = Object.entries(grouped).map(([date, amount]) => ({
-        date,
+      const result = Object.entries(grouped).map(([day, amount]) => ({
+        date: day,
         total_amount: amount
       }));
 
