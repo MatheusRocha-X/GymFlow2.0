@@ -13,6 +13,7 @@
 }
 
 .active-workout-container {
+  position: relative;
   width: min(100%, 920px);
   max-height: min(96dvh, 980px);
   overflow: auto;
@@ -255,6 +256,123 @@
   padding: 0.9rem;
 }
 
+.rest-fullscreen {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  min-height: unset;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  justify-items: center;
+  gap: 1.2rem;
+  text-align: center;
+  border-radius: 20px;
+  background: rgba(2, 6, 23, 0.95);
+  z-index: 5;
+}
+
+.rest-fullscreen .rest-controls {
+  width: min(520px, 90%);
+}
+
+.rest-fullscreen .rest-header h3 {
+  font-size: 1.4rem;
+}
+
+.rest-fullscreen .rest-header p {
+  font-size: 0.9rem;
+}
+
+.rest-fullscreen .rest-ring {
+  width: min(70vw, 320px);
+  height: min(70vw, 320px);
+}
+
+.rest-fullscreen .timer-display {
+  font-size: 2.4rem;
+  font-weight: 800;
+}
+
+.flash-alert {
+  animation: flashPulse 1s ease-in-out infinite;
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.35);
+}
+
+@keyframes flashPulse {
+  0%, 100% { background: rgba(15, 23, 42, 0.72); }
+  50% { background: rgba(16, 185, 129, 0.2); }
+}
+
+.active-workout-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1900;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.active-workout-modal-card {
+  width: min(90vw, 360px);
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.95);
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--text-primary);
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.6);
+}
+
+.active-workout-modal-card h3 {
+  margin: 0.6rem 0 0.35rem;
+  font-size: 1.1rem;
+}
+
+.active-workout-modal-card p {
+  margin: 0 0 1rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.modal-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.modal-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.modal-btn {
+  min-height: 42px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-btn.ghost {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(30, 41, 59, 0.72);
+  color: var(--text-secondary);
+}
+
+.modal-btn.danger {
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(127, 29, 29, 0.7);
+  color: #fecaca;
+}
+
 .rest-header h3,
 .performance-header h3 {
   margin: 0;
@@ -447,5 +565,15 @@
 
   .performance-inputs {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .rest-fullscreen {
+    min-height: 70vh;
+  }
+
+  .rest-fullscreen .timer-display {
+    font-size: 2.8rem;
   }
 }

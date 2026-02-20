@@ -2,7 +2,13 @@ import React from 'react';
 import './BottomTabNavigation.css';
 
 export default function BottomTabNavigation({ pages, currentIndex, onTabChange }) {
+  const confirmNavigation = () => {
+    return !localStorage.getItem('activeWorkoutInProgress') ||
+      confirm('Um treino esta em andamento. Sair vai perder o progresso. Deseja continuar?');
+  };
+
   const handleTabClick = (index) => {
+    if (!confirmNavigation()) return;
     onTabChange(index);
   };
 

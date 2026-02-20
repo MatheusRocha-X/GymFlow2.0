@@ -260,6 +260,213 @@
   gap: 12px;
 }
 
+.workout-evolution {
+  margin: 32px 0;
+  padding: 28px;
+  animation: slideUp 0.5s ease-out 0.15s backwards;
+}
+
+.workout-evolution-toolbar {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.workout-evolution-toolbar .filter-row label {
+  margin-bottom: 6px;
+}
+
+.workout-evolution-toolbar select {
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.72);
+  color: #ffffff;
+  padding: 0 12px;
+}
+
+.metric-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toggle-btn {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(30, 41, 59, 0.72);
+  color: rgba(255, 255, 255, 0.75);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.toggle-btn.active {
+  border-color: rgba(34, 211, 238, 0.45);
+  background: rgba(6, 182, 212, 0.2);
+  color: #bff7ff;
+}
+
+.workout-evolution-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.evo-mini-card {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.mini-label {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.mini-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.mini-sub {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.workout-evolution-chart .chart-header {
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+}
+
+.exercise-gif-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.7);
+  margin-bottom: 14px;
+}
+
+.exercise-gif {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(30, 41, 59, 0.7);
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+}
+
+.exercise-gif img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.exercise-gif-info {
+  display: grid;
+  gap: 4px;
+}
+
+.exercise-gif-info strong {
+  font-size: 0.95rem;
+  color: #ffffff;
+}
+
+.exercise-gif-info span {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.workout-evolution-chart .chart-sub {
+  margin-left: 10px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.chart-line {
+  position: absolute;
+  inset: 20px 0 24px;
+  width: 100%;
+  height: calc(100% - 44px);
+  pointer-events: none;
+}
+
+.chart-line polyline {
+  fill: none;
+  stroke: rgba(250, 204, 21, 0.8);
+  stroke-width: 2;
+}
+
+.chart-line circle {
+  fill: rgba(250, 204, 21, 0.9);
+}
+
+.chart-bar.pr {
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.45);
+  border: 1px solid rgba(250, 204, 21, 0.6);
+}
+
+.chart-pr {
+  position: absolute;
+  top: -14px;
+  right: -10px;
+  background: rgba(250, 204, 21, 0.9);
+  color: #111827;
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.metrics-pagination {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metrics-pagination strong {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.metrics-pagination .page-btn {
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(30, 41, 59, 0.62);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 0.75rem;
+  font-weight: 700;
+}
+
+.metrics-pagination .page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .metric-item {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -684,6 +891,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .workout-evolution-toolbar {
+    grid-template-columns: 1fr;
   }
 
   .form-row {

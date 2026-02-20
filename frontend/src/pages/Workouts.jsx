@@ -69,6 +69,9 @@ export default function Workouts() {
     () =>
       exercisesDatabase.reduce((acc, exercise) => {
         acc[exercise.name] = exercise;
+        if (exercise.originalName) {
+          acc[exercise.originalName] = exercise;
+        }
         return acc;
       }, {}),
     []
@@ -529,6 +532,7 @@ export default function Workouts() {
           </Button>
         </div>
 
+
         {showCreateForm && (
           <div className="create-form premium-card slide-up">
             <div className="form-header">
@@ -612,32 +616,16 @@ export default function Workouts() {
                     <div className="workout-header-right">
                       {exerciseCount > 0 && (
                         <button
-                          className="icon-btn primary tooltip-trigger"
+                          className="start-workout-btn"
                           onClick={(e) => {
                             e.stopPropagation();
                             startWorkout(workout);
                           }}
-                          title="Iniciar treino"
-                          style={{ 
-                            background: 'linear-gradient(135deg, #10b981, #059669)',
-                            borderColor: 'transparent',
-                            color: 'white'
-                          }}
                         >
-                          <Play size={20} />
+                          <Play size={18} />
+                          Iniciar treino
                         </button>
-                      )}
-                      <button
-                        className="icon-btn success tooltip-trigger"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          completeWorkout(workout.id);
-                        }}
-                        title="Marcar como concluído"
-                      >
-                        <Check size={20} />
-                      </button>
-                      <button
+                      )}                      <button
                         className="icon-btn danger tooltip-trigger"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -655,10 +643,21 @@ export default function Workouts() {
 
                   {isExpanded && (
                     <div className="workout-content">
+                      {exerciseCount > 0 && (
+                        <button
+                          className="start-workout-cta"
+                          onClick={() => startWorkout(workout)}
+                        >
+                          <Play size={18} />
+                          Iniciar treino agora
+                        </button>
+                      )}
                       {workout.exercises && workout.exercises.length > 0 ? (
                         <div className="exercises-list-enhanced">
                           {workout.exercises.map((exercise, index) => {
-                            const exerciseData = exercisesDatabase.find(ex => ex.name === exercise.name);
+                            const exerciseData = exercisesDatabase.find(
+                              (ex) => ex.name === exercise.name || ex.originalName === exercise.name
+                            );
                             
                             return (
                               <div key={exercise.id} className="exercise-item-enhanced">
@@ -706,7 +705,8 @@ export default function Workouts() {
                       ) : (
                         <div className="no-exercises">
                           <BookOpen size={32} />
-                          <p>Nenhum exercício adicionado ainda</p>
+                          <p>Nenhum exercicio adicionado ainda</p>
+                          <small>Para iniciar, adicione pelo menos 1 exercicio.</small>
                         </div>
                       )}
 

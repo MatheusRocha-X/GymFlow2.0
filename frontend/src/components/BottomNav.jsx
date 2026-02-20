@@ -4,6 +4,11 @@ import { Home, Dumbbell, BookOpen, Bell, TrendingUp, Settings, Pill } from 'luci
 import './BottomNav.css';
 
 export default function BottomNav() {
+  const confirmNavigation = () => {
+    return !localStorage.getItem('activeWorkoutInProgress') ||
+      confirm('Um treino esta em andamento. Sair vai perder o progresso. Deseja continuar?');
+  };
+
   const navItems = [
     { to: '/', icon: Home, label: 'Início' },
     { to: '/workouts', icon: Dumbbell, label: 'Treinos' },
@@ -17,7 +22,13 @@ export default function BottomNav() {
   return (
     <nav className="bottom-nav">
       {navItems.map(({ to, icon: Icon, label }) => (
-        <NavLink 
+        <NavLink
+          onClick={(event) => {
+            if (!confirmNavigation()) {
+              event.preventDefault();
+            }
+          }}
+
           key={to}
           to={to}
           className={({ isActive }) => 

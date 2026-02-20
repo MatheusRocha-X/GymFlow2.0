@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Check, ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Flag, Timer, Activity, Flame } from 'lucide-react';
+import { X, Check, ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Flag, Timer, Activity, Flame, ShieldAlert } from 'lucide-react';
 import { exercisesDatabase } from '../data/exercises';
 import './ActiveWorkout.css';
 
@@ -16,16 +16,22 @@ export default function ActiveWorkout({ workout, onClose, onComplete }) {
   const [showPerformanceForm, setShowPerformanceForm] = useState(false);
   const [performanceData, setPerformanceData] = useState({ reps: '', weight: '' });
   const [workoutLog, setWorkoutLog] = useState([]);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [restFinishedAt, setRestFinishedAt] = useState(null);
   const timerRef = useRef(null);
   const elapsedTimerRef = useRef(null);
   const audioRef = useRef(null);
+  const beepIntervalRef = useRef(null);
 
   const currentExercise = workout.exercises[currentExerciseIndex];
-  const exerciseData = exercisesDatabase.find(ex => ex.name === currentExercise.name);
+  const exerciseData = exercisesDatabase.find(
+    (ex) => ex.name === currentExercise.name || ex.originalName === currentExercise.name
+  );
   const totalExercises = workout.exercises.length;
   const totalSets = currentExercise.sets;
   const isLastSet = currentSet === totalSets;
   const isLastExercise = currentExerciseIndex === totalExercises - 1;
+  const shouldFlashTimer = Boolean(restFinishedAt) && isResting && restTime === 0;
 
   // Timer effect
   useEffect(() => {
@@ -35,6 +41,7 @@ export default function ActiveWorkout({ workout, onClose, onComplete }) {
           if (prev <= 1) {
             setIsRunning(false);
             playNotification();
+            setRestFinishedAt(Date.now());
             return 0;
           }
           setTotalRestTime(t => t + 1);
@@ -57,10 +64,63 @@ export default function ActiveWorkout({ workout, onClose, onComplete }) {
     return () => clearInterval(elapsedTimerRef.current);
   }, [workoutStartTime]);
 
+  useEffect(() => {
+    localStorage.setItem('activeWorkoutInProgress', 'true');
+    return () => {
+      localStorage.removeItem('activeWorkoutInProgress');
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  useEffect(() => {
+    if (shouldFlashTimer) {
+      beepIntervalRef.current = setInterval(() => {
+        playNotification();
+      }, 1200);
+    } else if (beepIntervalRef.current) {
+      clearInterval(beepIntervalRef.current);
+      beepIntervalRef.current = null;
+    }
+
+    return () => {
+      if (beepIntervalRef.current) {
+        clearInterval(beepIntervalRef.current);
+        beepIntervalRef.current = null;
+      }
+    };
+  }, [shouldFlashTimer]);
+
   const playNotification = () => {
-    // Vibração se disponível
     if ('vibrate' in navigator) {
       navigator.vibrate([200, 100, 200]);
+    }
+
+    try {
+      const AudioContextRef = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextRef) return;
+      if (!audioRef.current) {
+        audioRef.current = new AudioContextRef();
+      }
+      const audioContext = audioRef.current;
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = 880;
+      gainNode.gain.value = 0.2;
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.25);
+    } catch (error) {
+      console.warn('Audio notification not available', error);
     }
   };
 
@@ -69,18 +129,33 @@ export default function ActiveWorkout({ workout, onClose, onComplete }) {
     setRestTime(restSeconds);
     setIsResting(true);
     setIsRunning(true);
+    setRestFinishedAt(null);
+    if (beepIntervalRef.current) {
+      clearInterval(beepIntervalRef.current);
+      beepIntervalRef.current = null;
+    }
   };
 
   const skipRest = () => {
     setRestTime(0);
     setIsRunning(false);
     setIsResting(false);
+    setRestFinishedAt(null);
+    if (beepIntervalRef.current) {
+      clearInterval(beepIntervalRef.current);
+      beepIntervalRef.current = null;
+    }
   };
 
   const continueAfterRest = () => {
     setIsResting(false);
     setRestTime(0);
     setIsRunning(false);
+    setRestFinishedAt(null);
+    if (beepIntervalRef.current) {
+      clearInterval(beepIntervalRef.current);
+      beepIntervalRef.current = null;
+    }
   };
 
   const pauseTimer = () => {
@@ -91,6 +166,11 @@ export default function ActiveWorkout({ workout, onClose, onComplete }) {
     const restSeconds = currentExercise.rest_time || 60;
     setRestTime(restSeconds);
     setIsRunning(false);
+    setRestFinishedAt(null);
+    if (beepIntervalRef.current) {
+      clearInterval(beepIntervalRef.current);
+      beepIntervalRef.current = null;
+    }
   };
 
   const completeSet = () => {
@@ -141,6 +221,12 @@ export default function ActiveWorkout({ workout, onClose, onComplete }) {
   const finishWorkout = () => {
     clearInterval(timerRef.current);
     clearInterval(elapsedTimerRef.current);
+    if (beepIntervalRef.current) {
+      clearInterval(beepIntervalRef.current);
+      beepIntervalRef.current = null;
+    }
+    localStorage.removeItem('activeWorkoutInProgress');
+    playNotification();
     
     const duration = Math.floor((Date.now() - workoutStartTime) / 1000);
     onComplete({
@@ -158,11 +244,23 @@ export default function ActiveWorkout({ workout, onClose, onComplete }) {
   };
 
   const handleClose = () => {
-    if (confirm('Deseja realmente sair do treino? Seu progresso será perdido.')) {
-      clearInterval(timerRef.current);
-      clearInterval(elapsedTimerRef.current);
-      onClose();
+    setShowExitConfirm(true);
+  };
+
+  const cancelExit = () => {
+    setShowExitConfirm(false);
+  };
+
+  const confirmExit = () => {
+    clearInterval(timerRef.current);
+    clearInterval(elapsedTimerRef.current);
+    if (beepIntervalRef.current) {
+      clearInterval(beepIntervalRef.current);
+      beepIntervalRef.current = null;
     }
+    localStorage.removeItem('activeWorkoutInProgress');
+    setShowExitConfirm(false);
+    onClose();
   };
 
   const goToPreviousExercise = () => {
@@ -198,6 +296,22 @@ export default function ActiveWorkout({ workout, onClose, onComplete }) {
 
   return (
     <div className="active-workout-overlay">
+
+      {showExitConfirm && (
+        <div className="active-workout-modal">
+          <div className="active-workout-modal-card">
+            <div className="modal-icon">
+              <ShieldAlert size={28} />
+            </div>
+            <h3>Sair do treino?</h3>
+            <p>Seu progresso ser? perdido se voc? sair agora.</p>
+            <div className="modal-actions">
+              <button className="modal-btn ghost" onClick={cancelExit}>Continuar treino</button>
+              <button className="modal-btn danger" onClick={confirmExit}>Sair mesmo assim</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="active-workout-container">
         {/* Header */}
         <div className="active-workout-header">
@@ -316,7 +430,7 @@ export default function ActiveWorkout({ workout, onClose, onComplete }) {
 
         {/* Rest Timer or Action */}
         {isResting ? (
-          <div className="rest-section">
+          <div className={`rest-section rest-fullscreen ${shouldFlashTimer ? "flash-alert" : ""}`}>
             <div className="rest-header">
               <h3>Descanso</h3>
               <p>Prepare-se para a próxima série</p>

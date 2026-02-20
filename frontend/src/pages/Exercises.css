@@ -159,10 +159,16 @@
   padding: 0.24rem 0.55rem;
 }
 
-.pill.category {
+.pill.primary {
   color: #67e8f9;
   background: rgba(8, 145, 178, 0.24);
   border: 1px solid rgba(34, 211, 238, 0.35);
+}
+
+.pill.subcategory {
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.18);
+  border: 1px solid rgba(250, 204, 21, 0.35);
 }
 
 .pill.equipment {

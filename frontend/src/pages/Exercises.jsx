@@ -4,39 +4,63 @@ import {
   ChevronRight,
   Dumbbell,
   Filter,
-  Search
+  Search,
+  X
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
-import { categories, equipments, exercisesDatabase } from '../data/exercises';
+import { categories, equipments, exercisesDatabase, primaryCategories } from '../data/exercises';
 import './Exercises.css';
 
 const ITEMS_PER_PAGE = 18;
 
+const normalizeText = (value) => {
+  if (!value) return '';
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+};
+
 export default function Exercises() {
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [selectedPrimaryCategory, setSelectedPrimaryCategory] = useState('Todas');
   const [selectedEquipment, setSelectedEquipment] = useState('Todos');
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
 
   const filteredExercises = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = normalizeText(query.trim());
 
     return exercisesDatabase.filter((exercise) => {
+      const nameText = normalizeText(exercise.name);
+      const originalText = normalizeText(exercise.originalName);
+      const categoryText = normalizeText(exercise.category);
+      const primaryText = normalizeText(exercise.primaryCategory);
+      const equipmentText = normalizeText(exercise.equipment);
+      const muscleText = exercise.muscles?.map(normalizeText) || [];
+
       const byText =
         !normalized ||
-        exercise.name.toLowerCase().includes(normalized) ||
-        exercise.category.toLowerCase().includes(normalized) ||
-        exercise.equipment.toLowerCase().includes(normalized) ||
-        exercise.muscles?.some((muscle) => muscle.toLowerCase().includes(normalized));
+        nameText.includes(normalized) ||
+        originalText.includes(normalized) ||
+        categoryText.includes(normalized) ||
+        primaryText.includes(normalized) ||
+        equipmentText.includes(normalized) ||
+        muscleText.some((muscle) => muscle.includes(normalized));
       const byCategory =
-        selectedCategory === 'Todos' || exercise.category === selectedCategory;
+        selectedCategory === 'Todos' ||
+        normalizeText(selectedCategory) === categoryText;
+      const byPrimary =
+        selectedPrimaryCategory === 'Todas' ||
+        normalizeText(selectedPrimaryCategory) === primaryText;
       const byEquipment =
-        selectedEquipment === 'Todos' || exercise.equipment === selectedEquipment;
+        selectedEquipment === 'Todos' ||
+        normalizeText(selectedEquipment) === equipmentText;
 
-      return byText && byCategory && byEquipment;
+      return byText && byCategory && byPrimary && byEquipment;
     });
-  }, [query, selectedCategory, selectedEquipment]);
+  }, [query, selectedCategory, selectedPrimaryCategory, selectedEquipment]);
 
   const totalPages = Math.max(1, Math.ceil(filteredExercises.length / ITEMS_PER_PAGE));
   const firstItem = (page - 1) * ITEMS_PER_PAGE;
@@ -44,7 +68,7 @@ export default function Exercises() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, selectedCategory, selectedEquipment]);
+  }, [query, selectedCategory, selectedPrimaryCategory, selectedEquipment]);
 
   useEffect(() => {
     const scroller = document.querySelector('.nebula-content');
@@ -58,6 +82,7 @@ export default function Exercises() {
   const clearFilters = () => {
     setQuery('');
     setSelectedCategory('Todos');
+    setSelectedPrimaryCategory('Todas');
     setSelectedEquipment('Todos');
   };
 
@@ -104,7 +129,23 @@ export default function Exercises() {
         {showFilters && (
           <section className="filters-panel card fade-in">
             <div className="filter-row">
-              <label htmlFor="category-filter">Categoria</label>
+              <label htmlFor="primary-category-filter">Grupo muscular</label>
+              <select
+                id="primary-category-filter"
+                value={selectedPrimaryCategory}
+                onChange={(event) => setSelectedPrimaryCategory(event.target.value)}
+              >
+                <option value="Todas">Todas</option>
+                {primaryCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-row">
+              <label htmlFor="category-filter">Subgrupo</label>
               <select
                 id="category-filter"
                 value={selectedCategory}
@@ -134,6 +175,7 @@ export default function Exercises() {
             </div>
 
             <div className="active-chips">
+              <span className="chip">{selectedPrimaryCategory}</span>
               <span className="chip">{selectedCategory}</span>
               <span className="chip">{selectedEquipment}</span>
             </div>
@@ -154,7 +196,8 @@ export default function Exercises() {
                 <div className="exercise-content">
                   <h3>{exercise.name}</h3>
                   <div className="card-tags">
-                    <span className="pill category">{exercise.category}</span>
+                    <span className="pill subcategory">{exercise.category}</span>
+                    <span className="pill primary">{exercise.primaryCategory}</span>
                     <span className="pill equipment">{exercise.equipment}</span>
                   </div>
                 </div>

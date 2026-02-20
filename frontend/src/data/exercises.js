@@ -1,5 +1,5 @@
 // Banco de dados completo de exercícios
-export const exercisesDatabase = [
+const rawExercises = [
   {
     "id": 1,
     "name": "Extensão de Quadril no Cabo (Coice)",
@@ -3894,17 +3894,261 @@ export const exercisesDatabase = [
   }
 ];
 
-// Categorias disponíveis
-export const categories = [
-  "Abdômen",
-  "Braços",
-  "Cardio",
-  "Costas",
-  "Ombros",
-  "Outros",
-  "Peito",
-  "Pernas"
+
+
+const normalizeText = (value) => {
+  if (!value) return '';
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+};
+
+const TITLE_CASE_EXCEPTIONS = new Set(['de', 'da', 'do', 'das', 'dos', 'no', 'na', 'nos', 'nas', 'com', 'sem', 'e']);
+
+const toTitleCase = (value) => {
+  return String(value)
+    .split(' ')
+    .filter(Boolean)
+    .map((word, index) => {
+      const lower = word.toLowerCase();
+      if (index > 0 && TITLE_CASE_EXCEPTIONS.has(lower)) return lower;
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(' ');
+};
+
+const NAME_REPLACEMENTS = [
+  [/\bBench Press\b/gi, 'Supino'],
+  [/\bChest Press\b/gi, 'Supino'],
+  [/\bShoulder Press\b/gi, 'Desenvolvimento de Ombro'],
+  [/\bMilitary Press\b/gi, 'Desenvolvimento Militar'],
+  [/\bOverhead Press\b/gi, 'Desenvolvimento Acima da Cabeça'],
+  [/\bPush Press\b/gi, 'Push Press'],
+  [/\bLeg Press\b/gi, 'Leg Press'],
+  [/\bHip Thrust\b/gi, 'Hip Thrust'],
+  [/\bDumbbell\b/gi, 'Halter'],
+  [/\bBarbell\b/gi, 'Barra'],
+  [/\bKettlebell\b/gi, 'Kettlebell'],
+  [/\bCable\b/gi, 'Cabo'],
+  [/\bMachine\b/gi, 'Máquina'],
+  [/\bBench\b/gi, 'Banco'],
+  [/\bChest\b/gi, 'Peito'],
+  [/\bShoulder\b/gi, 'Ombro'],
+  [/\bRow(s)?\b/gi, 'Remada'],
+  [/\bPulldown\b/gi, 'Puxada'],
+  [/\bPull\b/gi, 'Puxada'],
+  [/\bCurl\b/gi, 'Rosca'],
+  [/\bFly\b/gi, 'Crucifixo'],
+  [/\bRaise\b/gi, 'Elevação'],
+  [/\bLunge\b/gi, 'Avanço'],
+  [/\bSquat(s)?\b/gi, 'Agachamento'],
+  [/\bDeadlift\b/gi, 'Levantamento Terra'],
+  [/\bBridge\b/gi, 'Ponte'],
+  [/\bKickback\b/gi, 'Coice'],
+  [/\bHamstring\b/gi, 'Posterior de Coxa'],
+  [/\bQuad(s)?\b/gi, 'Quadríceps'],
+  [/\bCalf\b/gi, 'Panturrilha'],
+  [/\bTricep(s)?\b/gi, 'Tríceps'],
+  [/\bBicep(s)?\b/gi, 'Bíceps'],
+  [/\bForearm\b/gi, 'Antebraço'],
+  [/\bIncline\b/gi, 'Inclinado'],
+  [/\bDecline\b/gi, 'Declinado'],
+  [/\bSeated\b/gi, 'Sentado'],
+  [/\bStanding\b/gi, 'Em Pé'],
+  [/\bSingle(\s|-)?Arm\b/gi, 'Unilateral'],
+  [/\bOne(\s|-)?Arm\b/gi, 'Unilateral'],
+  [/\bTwo(\s|-)?Arm\b/gi, 'Bilateral'],
+  [/\bUpper\b/gi, 'Superior'],
+  [/\bLower\b/gi, 'Inferior']
 ];
+
+const fixBrokenEncoding = (value) => {
+  return String(value)
+    .replace(/Bra\?os/gi, 'Braços')
+    .replace(/Tr\?ceps/gi, 'Tríceps')
+    .replace(/B\?ceps/gi, 'Bíceps')
+    .replace(/Antebra\?o/gi, 'Antebraço')
+    .replace(/Quadr\?ceps/gi, 'Quadríceps')
+    .replace(/Gl\?teos/gi, 'Glúteos')
+    .replace(/Obl\?quos/gi, 'Oblíquos')
+    .replace(/Abd\?men/gi, 'Abdômen')
+    .replace(/Peito M\?dio/gi, 'Peito Médio')
+    .replace(/Pernas\?/gi, 'Pernas')
+    .replace(/Peito\?/gi, 'Peito');
+};
+
+const prettifyExerciseName = (name) => {
+  let value = String(name || '')
+    .replace(/[_-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  NAME_REPLACEMENTS.forEach(([regex, replacement]) => {
+    value = value.replace(regex, replacement);
+  });
+
+  value = value
+    .replace(/\bOn The\b/gi, '')
+    .replace(/\bOn\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return fixBrokenEncoding(toTitleCase(value));
+};
+
+const inferPrimaryCategory = (rawCategory = '') => {
+  const c = normalizeText(rawCategory);
+  if (c.includes('peit') || c.includes('chest')) return 'Peito';
+  if (c.includes('cost') || c.includes('back')) return 'Costas';
+  if (c.includes('ombr') || c.includes('shoulder')) return 'Ombros';
+  if (c.includes('bra') || c.includes('tricep') || c.includes('bicep') || c.includes('arm')) return 'Braços';
+  if (c.includes('pern') || c.includes('leg') || c.includes('quad') || c.includes('glute')) return 'Pernas';
+  if (c.includes('abd') || c.includes('core')) return 'Abdômen';
+  if (c.includes('card')) return 'Cardio';
+  return 'Outros';
+};
+
+const inferSubCategory = (name, primaryCategory) => {
+  const n = normalizeText(name);
+  const p = normalizeText(primaryCategory);
+
+  if (p === 'bracos') {
+    if (
+      n.includes('tricep') ||
+      n.includes('triceps') ||
+      n.includes('extensao') ||
+      n.includes('pushdown') ||
+      n.includes('pulley') ||
+      n.includes('dip') ||
+      n.includes('kickback') ||
+      n.includes('overhead') ||
+      n.includes('testa') ||
+      n.includes('skull')
+    ) {
+      return 'Tríceps';
+    }
+    if (
+      n.includes('bicep') ||
+      n.includes('biceps') ||
+      n.includes('rosca') ||
+      n.includes('curl') ||
+      n.includes('martelo') ||
+      n.includes('preacher') ||
+      n.includes('concentration') ||
+      n.includes('spider')
+    ) {
+      return 'Bíceps';
+    }
+    if (
+      n.includes('antebraco') ||
+      n.includes('forearm') ||
+      n.includes('wrist') ||
+      n.includes('grip') ||
+      n.includes('punho')
+    ) {
+      return 'Antebraço';
+    }
+    return 'Braços (Geral)';
+  }
+
+  if (p === 'peito') {
+    if (n.includes('inclinado') || n.includes('superior') || n.includes('upper')) return 'Peito Superior';
+    if (n.includes('declinado') || n.includes('inferior') || n.includes('lower')) return 'Peito Inferior';
+    return 'Peito Médio';
+  }
+
+  if (p === 'pernas') {
+    if (n.includes('quadricep') || n.includes('agachamento') || n.includes('leg press') || n.includes('extensao')) return 'Quadríceps';
+    if (n.includes('posterior') || n.includes('hamstring') || n.includes('leg curl') || n.includes('romanian') || n.includes('deadlift')) return 'Posterior de Coxa';
+    if (n.includes('panturrilha') || n.includes('calf')) return 'Panturrilha';
+    if (n.includes('glute') || n.includes('gluteo') || n.includes('hip thrust') || n.includes('ponte') || n.includes('coice')) return 'Glúteos';
+    if (n.includes('adutor') || n.includes('abductor') || n.includes('adduction') || n.includes('abduction')) return 'Adutores/Abdutores';
+    return 'Pernas (Geral)';
+  }
+
+  if (p === 'ombros') {
+    if (n.includes('posterior') || n.includes('rear')) return 'Ombro Posterior';
+    if (n.includes('lateral') || n.includes('side')) return 'Ombro Lateral';
+    if (n.includes('frontal') || n.includes('front')) return 'Ombro Anterior';
+    return 'Ombros (Geral)';
+  }
+
+  if (p === 'costas') {
+    if (n.includes('remada') || n.includes('row')) return 'Costas (Remada)';
+    if (n.includes('puxada') || n.includes('pulldown') || n.includes('pull')) return 'Costas (Puxada)';
+    if (n.includes('lombar') || n.includes('deadlift') || n.includes('levantamento')) return 'Lombar';
+    return 'Costas (Geral)';
+  }
+
+  if (p === 'abdomen') {
+    if (n.includes('obliquo') || n.includes('twist') || n.includes('side')) return 'Oblíquos';
+    if (n.includes('lower') || n.includes('leg raise') || n.includes('hanging')) return 'Infra';
+    if (n.includes('crunch')) return 'Reto Abdominal';
+    return 'Core';
+  }
+
+  return primaryCategory;
+};
+
+export const exercisesDatabase = rawExercises.map((exercise) => {
+  const displayName = prettifyExerciseName(exercise.name);
+  const primaryCategory = fixBrokenEncoding(inferPrimaryCategory(exercise.category));
+  const subCategory = fixBrokenEncoding(inferSubCategory(displayName, primaryCategory));
+
+  return {
+    ...exercise,
+    name: displayName,
+    originalName: exercise.name,
+    primaryCategory,
+    category: subCategory
+  };
+});
+
+const CATEGORY_ORDER = [
+  'Peito Superior',
+  'Peito Médio',
+  'Peito Inferior',
+  'Costas (Puxada)',
+  'Costas (Remada)',
+  'Costas (Geral)',
+  'Lombar',
+  'Ombro Anterior',
+  'Ombro Lateral',
+  'Ombro Posterior',
+  'Ombros (Geral)',
+  'Bíceps',
+  'Tríceps',
+  'Antebraço',
+  'Braços (Geral)',
+  'Quadríceps',
+  'Posterior de Coxa',
+  'Glúteos',
+  'Panturrilha',
+  'Adutores/Abdutores',
+  'Pernas (Geral)',
+  'Reto Abdominal',
+  'Infra',
+  'Oblíquos',
+  'Core',
+  'Cardio',
+  'Outros'
+];
+
+const sortByOrder = (values) => {
+  return values.sort((a, b) => {
+    const ai = CATEGORY_ORDER.indexOf(a);
+    const bi = CATEGORY_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+};
+
+// Categorias disponíveis
+export const categories = sortByOrder(Array.from(new Set(exercisesDatabase.map((exercise) => exercise.category)))).map(fixBrokenEncoding);
+export const primaryCategories = ['Peito', 'Costas', 'Ombros', 'Braços', 'Pernas', 'Abdômen', 'Cardio', 'Outros'].map(fixBrokenEncoding);
 
 // Tipos de equipamento
 export const equipments = [

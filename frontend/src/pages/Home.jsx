@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Dumbbell, Droplet, TrendingUp, Flame, Calendar, Sparkles } from 'lucide-react';
+import { Dumbbell, Droplet, Flame, Calendar, Sparkles } from 'lucide-react';
 import api from '../services/api';
 import './Home.css';
 
@@ -39,8 +39,28 @@ export default function Home() {
     currentStreak: 0,
     nextReminder: null
   });
+  const [workoutDates, setWorkoutDates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dailyQuote] = useState(getDailyQuote());
+
+  const formatLocalDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getWeekDays = () => {
+    const start = new Date();
+    start.setDate(start.getDate() - start.getDay());
+    start.setHours(0, 0, 0, 0);
+
+    return Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(start);
+      day.setDate(start.getDate() + index);
+      return day;
+    });
+  };
 
   useEffect(() => {
     loadStats();
@@ -82,6 +102,10 @@ export default function Home() {
       const workoutsThisWeek = history?.filter(w => 
         new Date(w.completed_at) >= weekStart
       ).length || 0;
+      const completedDates = new Set(
+        (history || []).map((workout) => formatLocalDate(new Date(workout.completed_at)))
+      );
+      setWorkoutDates(Array.from(completedDates));
 
       // Carregar próximo lembrete
       const reminders = await api.getReminders(user.id);
@@ -107,6 +131,10 @@ export default function Home() {
     if (hour < 18) return 'Boa tarde';
     return 'Boa noite';
   };
+
+  const weekDays = getWeekDays();
+  const todayKey = formatLocalDate(new Date());
+  const weekDayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
 
   return (
     <div className="home-page">
@@ -149,22 +177,33 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="stat-card workout-stat fade-in" style={{ animationDelay: '0.2s' }}>
+          <div className="stat-card calendar-stat fade-in" style={{ animationDelay: '0.2s' }}>
             <div className="stat-header">
-              <Dumbbell size={24} />
-              <span className="stat-label">Treinos/Semana</span>
+              <Calendar size={24} />
+              <span className="stat-label">Calendario da Semana</span>
             </div>
-            <div className="stat-value">{stats.workoutsThisWeek}</div>
-            <div className="stat-footer">de 7 dias</div>
-          </div>
-
-          <div className="stat-card streak-stat fade-in" style={{ animationDelay: '0.3s' }}>
-            <div className="stat-header">
-              <Flame size={24} />
-              <span className="stat-label">Sequência</span>
+            <div className="calendar-grid">
+              {weekDays.map((day, index) => {
+                const dayKey = formatLocalDate(day);
+                const isTrained = workoutDates.includes(dayKey);
+                const isToday = dayKey === todayKey;
+                return (
+                  <div
+                    key={dayKey}
+                    className={`calendar-day${isTrained ? ' trained' : ''}${isToday ? ' today' : ''}`}
+                  >
+                    <span className="day-name">{weekDayLabels[index]}</span>
+                    <span className="day-number">{day.getDate()}</span>
+                  </div>
+                );
+              })}
             </div>
-            <div className="stat-value">{stats.currentStreak}</div>
-            <div className="stat-footer">dias seguidos</div>
+            <div className="calendar-legend">
+              <span className="legend-dot trained-dot" />
+              <span className="legend-text">Treinou</span>
+              <span className="legend-dot today-dot" />
+              <span className="legend-text">Hoje</span>
+            </div>
           </div>
         </div>
 
