@@ -511,13 +511,6 @@ if (loading) {
                 </button>
                 <button
                   type="button"
-                  className={`toggle-btn ${trendMetric === 'total_volume' ? 'active' : ''}`}
-                  onClick={() => setTrendMetric('total_volume')}
-                >
-                  Volume
-                </button>
-                <button
-                  type="button"
                   className={`toggle-btn ${trendMetric === 'total_reps' ? 'active' : ''}`}
                   onClick={() => setTrendMetric('total_reps')}
                 >
@@ -547,10 +540,6 @@ if (loading) {
                     <span className="mini-label">Melhor carga</span>
                     <strong className="mini-value">{bestMaxWeight} kg</strong>
                     {bestMaxWeight > 0 && <span className="mini-sub">PR do exercicio</span>}
-                  </div>
-                  <div className="evo-mini-card">
-                    <span className="mini-label">Volume médio</span>
-                    <strong className="mini-value">{averageVolume} kg</strong>
                   </div>
                   <div className="evo-mini-card">
                     <span className="mini-label">Sessões</span>
